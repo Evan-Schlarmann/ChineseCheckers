@@ -1,0 +1,10 @@
+com.example.chinesecheckers
+com.example.chinesecheckers.app
+com.example.chinesecheckers.Interfaces
+com.example.chinesecheckers.models
+com.example.chinesecheckers.utils
+com.example.chinesecheckers.utils.FriendRequest
+com.example.chinesecheckers.utils.Requests
+com.example.chinesecheckers.utils.Requests.FriendRequests
+com.example.chinesecheckers.utils.Requests.LobbyRequests
+com.example.chinesecheckers.utils.Requests.UserUpdateReq

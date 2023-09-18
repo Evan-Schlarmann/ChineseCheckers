@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SignUp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">SignUp.java</span></div><h1>SignUp.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import static com.example.chinesecheckers.utils.VolleyProgressDialog.dismissProgressDialog;
+import static com.example.chinesecheckers.utils.VolleyProgressDialog.showProgressDialog;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.chinesecheckers.app.AppController;
+import com.example.chinesecheckers.utils.Const;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+/**
+ * The Sign Up Page is the page a user sees when they want to make a new account,
+ * where they are requested to provide login credentials for the new account.
+ * After successfully creating an account they are directed to the Login page to login with the new credentials.
+ */
+<span class="fc" id="L34">public class SignUp extends AppCompatActivity {</span>
+
+<span class="fc" id="L36">    private final String TAG = SignUp.class.getSimpleName();</span>
+    // Use these tags to cancel requests
+<span class="fc" id="L38">    private final String tag_json_signup = &quot;json_signup&quot;;</span>
+
+    private Button signUpButton;
+    private Button cancelSignUp;
+    private EditText usernameText;
+    private EditText passwordText;
+    private EditText confirmPasswordText;
+    private Spinner roleSpinner;
+    private ProgressDialog pDialog;
+
+    /**
+     * On Create sets up the View with on click listeners that redirect the user
+     * to the home page or sign up page.  It requires the user to enter a new accounts login credentials.
+     *
+     * It creates buttons to send a user to sign in, or to request a new account from the server
+     *
+     * @param savedInstanceState - contains all saved instances and information.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L58">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L59">        setContentView(R.layout.activity_sign_up);</span>
+
+<span class="fc" id="L61">        signUpButton = findViewById(R.id.signUpButton);</span>
+<span class="fc" id="L62">        cancelSignUp = findViewById(R.id.cancelSignUp);</span>
+<span class="fc" id="L63">        usernameText = findViewById(R.id.usernameText2);</span>
+<span class="fc" id="L64">        passwordText = findViewById(R.id.passwordText2);</span>
+<span class="fc" id="L65">        confirmPasswordText = findViewById(R.id.confirmPasswordText);</span>
+<span class="fc" id="L66">        roleSpinner = findViewById(R.id.roleSpinner);</span>
+
+        // Populate the spinner with roles.
+<span class="fc" id="L69">        ArrayAdapter&lt;CharSequence&gt; adapter = ArrayAdapter.createFromResource(this,</span>
+                R.array.role_array, android.R.layout.simple_spinner_item);
+<span class="fc" id="L71">        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="fc" id="L72">        roleSpinner.setAdapter(adapter);</span>
+
+<span class="fc" id="L74">        pDialog = new ProgressDialog(this);</span>
+<span class="fc" id="L75">        pDialog.setMessage(&quot;Loading...&quot;);</span>
+<span class="fc" id="L76">        pDialog.setCancelable(false);</span>
+
+<span class="fc" id="L78">        signUpButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L81">                boolean validSignup = true;</span>
+<span class="fc" id="L82">                String pass1 = passwordText.getText().toString();</span>
+<span class="fc" id="L83">                String pass2 = confirmPasswordText.getText().toString();</span>
+<span class="fc" id="L84">                String name = usernameText.getText().toString();</span>
+
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">                if(!(pass1.equals(pass2))){</span>
+<span class="nc" id="L87">                    passwordText.setError(&quot;Passwords must match&quot;);</span>
+<span class="nc" id="L88">                    confirmPasswordText.setError(&quot;Passwords must match&quot;);</span>
+<span class="nc" id="L89">                    validSignup = false;</span>
+                }
+                // Overwrite the non equal error if password doesn't meet the requirements.
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                if(pass1.isEmpty()){</span>
+<span class="nc" id="L93">                    passwordText.setError(&quot;password required&quot;);</span>
+<span class="nc" id="L94">                    validSignup = false;</span>
+                }
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">                if(name.isEmpty()){</span>
+<span class="nc" id="L97">                    usernameText.setError(&quot;username required&quot;);</span>
+<span class="nc" id="L98">                    validSignup = false;</span>
+                }
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                if(validSignup)</span>
+<span class="fc" id="L101">                    makeJsonSignupReq();</span>
+<span class="fc" id="L102">            }</span>
+        });
+
+<span class="fc" id="L105">        cancelSignUp.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L108">                Intent i = new Intent(SignUp.this, LoginPage.class);</span>
+<span class="fc" id="L109">                startActivity(i);</span>
+<span class="fc" id="L110">            }</span>
+        });
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * sends the entered login credentials to the server, displays an error if not accepted, if accepted directs the user to the login page to sign in
+     */
+    private void makeJsonSignupReq() {
+<span class="fc" id="L118">        showProgressDialog(pDialog);</span>
+
+<span class="fc" id="L120">        JSONObject userParam = new JSONObject();</span>
+        try {
+            //input your API parameters
+<span class="fc" id="L123">            userParam.put(&quot;role&quot;, roleSpinner.getSelectedItem().toString());</span>
+<span class="fc" id="L124">            userParam.put(&quot;username&quot;, usernameText.getText().toString());</span>
+<span class="fc" id="L125">            userParam.put(&quot;password&quot;, passwordText.getText().toString());</span>
+<span class="nc" id="L126">        } catch (JSONException e) {</span>
+<span class="nc" id="L127">            e.printStackTrace();</span>
+<span class="fc" id="L128">        }</span>
+
+<span class="fc" id="L130">        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST,</span>
+                Const.URL_USERS_NEW, userParam,
+<span class="fc" id="L132">                new Response.Listener&lt;JSONObject&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONObject response) {
+<span class="fc" id="L135">                        Log.d(TAG, response.toString());</span>
+                        try{
+<span class="fc" id="L137">                            dismissProgressDialog(pDialog);</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                            if(response.getString(&quot;role&quot;).equals(&quot;failed&quot;)) {</span>
+<span class="fc" id="L139">                                usernameText.setError(&quot;username is taken&quot;);</span>
+                            }else{
+<span class="nc" id="L141">                                Intent i = new Intent(SignUp.this, LoginPage.class);</span>
+<span class="nc" id="L142">                                startActivity(i);</span>
+
+                            }
+<span class="nc" id="L145">                        } catch(JSONException e){</span>
+<span class="nc" id="L146">                            e.printStackTrace();</span>
+<span class="fc" id="L147">                        }</span>
+<span class="fc" id="L148">                    }</span>
+<span class="fc" id="L149">                }, new Response.ErrorListener() {</span>
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L153">                VolleyLog.d(TAG, &quot;Error: &quot; + error.getMessage());</span>
+
+<span class="nc" id="L155">                dismissProgressDialog(pDialog);</span>
+<span class="nc" id="L156">            }</span>
+        });
+
+        // Adding request to request queue
+<span class="fc" id="L160">        AppController.getInstance().addToRequestQueue(jsonObjReq,</span>
+                tag_json_signup);
+
+        // Cancelling request
+        // ApplicationController.getInstance().getRequestQueue().cancelAll(tag_json_obj);
+<span class="fc" id="L165">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

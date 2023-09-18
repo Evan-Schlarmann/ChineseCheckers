@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HomePage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">HomePage.java</span></div><h1>HomePage.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.CreatePrivateLobbyReq;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.JoinPrivateLobbyReq;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.JoinPublicLobbyReq;
+
+/**
+ * HomePage is the main activity for Chinese Checkers. It allows access to the users settings, users list, game matchmaking,
+ * and admin access controls to high level users.
+ */
+<span class="fc" id="L26">public class HomePage extends AppCompatActivity {</span>
+
+<span class="fc" id="L28">    private final String tag_json_joinLobby = &quot;json_join&quot;;</span>
+<span class="fc" id="L29">    private final String TAG = HomePage.class.getSimpleName();</span>
+    private UserModel user;
+    private Dialog privateLobbyDialog;
+
+    /**
+     * On Create sets up the View with on click listeners that redirect the user
+     * to different pages. It requires the user from the previous intent in order
+     * to have the user's information.
+     *
+     * It creates buttons to send a user into a game lobby, their settings page,
+     * a user list page, and if admin, a admin controls page.
+     *
+     * @param savedInstanceState - contains all saved instances and information.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L45">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L46">        setContentView(R.layout.activity_home_page);</span>
+
+        //get user info from prev login
+<span class="fc" id="L49">        user = (UserModel) getIntent().getSerializableExtra(&quot;user&quot;);</span>
+<span class="fc" id="L50">        ImageButton profileSettingsButton = findViewById(R.id.profileSettingsButton);</span>
+<span class="fc" id="L51">        ImageButton userListButton = findViewById(R.id.userListButton);</span>
+<span class="fc" id="L52">        Button joinPrivateLobby = findViewById(R.id.joinPrivateLobby);</span>
+<span class="fc" id="L53">        ImageButton adminHomePageButton = findViewById(R.id.adminHomePageButton);</span>
+<span class="fc" id="L54">        Button casualLobbyButton = findViewById(R.id.joinCasualLobbyButton);</span>
+<span class="fc" id="L55">        Button competitiveLobbyButton = findViewById(R.id.joinCompetitiveLobbyButton);</span>
+<span class="fc" id="L56">        Button globalChat = findViewById(R.id.joinGlobalChat);</span>
+
+<span class="fc" id="L58">        ProgressDialog pDialog = new ProgressDialog(this);</span>
+<span class="fc" id="L59">        pDialog.setMessage(&quot;Joining...&quot;);</span>
+<span class="fc" id="L60">        pDialog.setCancelable(false);</span>
+
+<span class="fc" id="L62">        profileSettingsButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L65">                Intent i = new Intent(HomePage.this, ActiveUserProfile.class);</span>
+<span class="fc" id="L66">                i.putExtra(&quot;user&quot;, user);</span>
+<span class="fc" id="L67">                startActivity(i);</span>
+<span class="fc" id="L68">            }</span>
+        });
+
+<span class="fc" id="L71">        userListButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L74">                Intent i = new Intent(HomePage.this, UserList.class);</span>
+<span class="fc" id="L75">                i.putExtra(&quot;user&quot;, user);</span>
+<span class="fc" id="L76">                startActivity(i);</span>
+<span class="fc" id="L77">            }</span>
+        });
+
+        // Only display the admin button to admins.
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if(user.getRole().equals(&quot;admin&quot;)) {</span>
+<span class="fc" id="L82">            adminHomePageButton.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View view) {
+<span class="fc" id="L85">                    Intent i = new Intent(HomePage.this, AdminHomePage.class);</span>
+<span class="fc" id="L86">                    i.putExtra(&quot;user&quot;, user);</span>
+<span class="fc" id="L87">                    startActivity(i);</span>
+<span class="fc" id="L88">                }</span>
+            });
+        }
+        else{
+<span class="fc" id="L92">            adminHomePageButton.setVisibility(View.INVISIBLE);</span>
+        }
+
+<span class="fc" id="L95">        casualLobbyButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L98">                JoinPublicLobbyReq lobbyReq = new JoinPublicLobbyReq(TAG, user, HomePage.this);</span>
+<span class="nc" id="L99">                lobbyReq.createRequestObject(user);</span>
+<span class="nc" id="L100">                lobbyReq.sendRequest(Request.Method.POST, Const.URL_JOIN_CASUAL_LOBBY);</span>
+<span class="nc" id="L101">            }</span>
+        });
+
+<span class="fc" id="L104">        competitiveLobbyButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L107">                JoinPublicLobbyReq lobbyReq = new JoinPublicLobbyReq(TAG, user, HomePage.this);</span>
+<span class="nc" id="L108">                lobbyReq.createRequestObject(user);</span>
+<span class="nc" id="L109">                lobbyReq.sendRequest(Request.Method.POST, Const.URL_JOIN_COMPETITIVE_LOBBY);</span>
+<span class="nc" id="L110">            }</span>
+        });
+            
+<span class="fc" id="L113">        joinPrivateLobby.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+                // display a dialog to input lobby join code.
+<span class="fc" id="L117">                showJoinPrivateLobbyDialog();</span>
+<span class="fc" id="L118">            }</span>
+        });
+
+<span class="fc" id="L121">        globalChat.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L124">                Intent i = new Intent(HomePage.this, GlobalChatPage.class);</span>
+<span class="fc" id="L125">                i.putExtra(&quot;user&quot;, user);</span>
+<span class="fc" id="L126">                startActivity(i);</span>
+<span class="fc" id="L127">            }</span>
+        });
+<span class="fc" id="L129">    }</span>
+
+    /*
+    Dialog method to join private lobbies by inputting a join code.
+     */
+    private void showJoinPrivateLobbyDialog() {
+<span class="fc" id="L135">        privateLobbyDialog = new Dialog(HomePage.this);</span>
+
+        // Set dialog features and layout.
+<span class="fc" id="L138">        privateLobbyDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);</span>
+<span class="fc" id="L139">        privateLobbyDialog.setCancelable(true);</span>
+<span class="fc" id="L140">        privateLobbyDialog.setContentView(R.layout.join_lobby_dialog);</span>
+
+        // Create components.
+<span class="fc" id="L143">        Button joinLobby = privateLobbyDialog.findViewById(R.id.confirmJoinPrivateLobby);</span>
+<span class="fc" id="L144">        Button cancelJoin = privateLobbyDialog.findViewById(R.id.cancelJoinPrivateLobby);</span>
+<span class="fc" id="L145">        TextView joinCode = privateLobbyDialog.findViewById(R.id.textPrivateLobbyPasscode);</span>
+<span class="fc" id="L146">        Button createPrivateLobby = privateLobbyDialog.findViewById(R.id.createPrivateLobby);</span>
+
+<span class="fc" id="L148">        createPrivateLobby.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+                // create and join a private lobby.
+<span class="fc" id="L152">                CreatePrivateLobbyReq createPrivateLobbyReq = new CreatePrivateLobbyReq(TAG, user, HomePage.this);</span>
+<span class="fc" id="L153">                createPrivateLobbyReq.createRequestObject(user);</span>
+<span class="fc" id="L154">                createPrivateLobbyReq.sendRequest(Request.Method.POST, Const.URL_CREATE_PRIVATE_LOBBY);</span>
+<span class="fc" id="L155">                privateLobbyDialog.dismiss();</span>
+<span class="fc" id="L156">            }</span>
+        });
+
+<span class="fc" id="L159">        joinLobby.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if(joinCode.getText().toString().equals(&quot;&quot;)){</span>
+<span class="nc" id="L163">                    joinCode.setError(&quot;Empty Join Code&quot;);</span>
+                }else {
+
+<span class="nc" id="L166">                    JoinPrivateLobbyReq joinReq = new JoinPrivateLobbyReq(TAG, user, HomePage.this, privateLobbyDialog, joinCode);</span>
+<span class="nc" id="L167">                    joinReq.createRequestObject(user);</span>
+<span class="nc" id="L168">                    joinReq.sendRequest(Request.Method.POST, Const.URL_JOIN_PRIVATE_LOBBY + joinCode.getText().toString());</span>
+                }
+<span class="nc" id="L170">            }</span>
+        });
+
+<span class="fc" id="L173">        cancelJoin.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L176">                privateLobbyDialog.dismiss();</span>
+<span class="nc" id="L177">            }</span>
+        });
+
+        // Display the dialog.
+<span class="fc" id="L181">        privateLobbyDialog.show();</span>
+<span class="fc" id="L182">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

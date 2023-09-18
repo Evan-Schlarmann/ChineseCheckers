@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FriendRequestCustomAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.utils.FriendRequest</a> &gt; <span class="el_source">FriendRequestCustomAdapter.java</span></div><h1>FriendRequestCustomAdapter.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.utils.FriendRequest;
+
+import android.app.Activity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.example.chinesecheckers.R;
+import com.example.chinesecheckers.utils.Requests.FriendRequests.AcceptFriendRequest;
+import com.example.chinesecheckers.utils.Requests.FriendRequests.DeleteFriendRequest;
+import com.example.chinesecheckers.models.FriendRequestModel;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+
+import java.util.ArrayList;
+
+/**
+ * FriendRequestCustomAdapter displays friend requests as a list and determines the layout that
+ * each row is implemented by based on the friend request type. The list allows users to accept or
+ * delete incoming requests and to delete outgoing requests.
+ */
+public class FriendRequestCustomAdapter extends ArrayAdapter&lt;FriendRequestModel&gt; {
+    private Activity activity;
+    private ArrayList&lt;FriendRequestModel&gt; data;
+    private FriendRequestEnum friendRequestType;
+    private UserModel user;
+
+    /**
+     * The constructor takes an activity to know where the adapter is being displayed.
+     * It requires the user of whom is loading their friend requests.
+     * It has an array list of all the friend requests and what type of requests it is displaying.
+     *
+     * @param activity - current activity
+     * @param user - logged in user
+     * @param data - list of all friend requests of given type
+     * @param requestType - friend requests type, INCOMING or OUTGOING
+     */
+    public FriendRequestCustomAdapter(Activity activity, UserModel user, ArrayList&lt;FriendRequestModel&gt; data, FriendRequestEnum requestType) {
+<span class="fc" id="L43">        super(activity, 0, data);</span>
+<span class="fc" id="L44">        this.activity = activity;</span>
+<span class="fc" id="L45">        this.data = data;</span>
+<span class="fc" id="L46">        this.friendRequestType = requestType;</span>
+<span class="fc" id="L47">        this.user = user;</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * getView generates the view for the activity by inflating either incoming requests layout or
+     * outgoing requests layout. It then creates the buttons to accept or delete a friend request.
+     *
+     * @param position - position of the view
+     * @param convertView - the view that we will change to display our data
+     * @param parent - the parent of our adapter view
+     * @return - our now custom convertView
+     */
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+
+<span class="fc" id="L62">        FriendRequestModel friendRequest = data.get(position);</span>
+
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        if (friendRequestType.equals(FriendRequestEnum.INCOMING) &amp;&amp; convertView == null) {</span>
+<span class="fc" id="L65">            convertView = LayoutInflater.from(getContext()).inflate(R.layout.friend_request_incoming_row, parent, false);</span>
+
+            // Only include accept button if the friend request is incoming.
+<span class="fc" id="L68">            Button acceptButton = (Button) convertView.findViewById(R.id.accept_friend_request_btn);</span>
+
+<span class="fc" id="L70">            acceptButton.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View view) {
+                    // Accept the friend request.
+<span class="fc" id="L74">                    AcceptFriendRequest acceptFQ = new AcceptFriendRequest(activity.getClass().getSimpleName(), activity, FriendRequestCustomAdapter.this, friendRequest);</span>
+<span class="fc" id="L75">                    acceptFQ.createRequestObject(friendRequest.getId(), true);</span>
+<span class="fc" id="L76">                    acceptFQ.sendRequest(Request.Method.PUT, Const.URL_ACCEPT_FRIEND_REQUEST);</span>
+<span class="fc" id="L77">                }</span>
+            });
+<span class="fc" id="L79">        }</span>
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">        else if(friendRequestType.equals(FriendRequestEnum.OUTGOING) &amp;&amp; convertView == null)</span>
+        {
+<span class="fc" id="L82">            convertView = LayoutInflater.from(getContext()).inflate(R.layout.friend_request_outgoing_row, parent, false);</span>
+        }
+
+<span class="fc" id="L85">        TextView username = (TextView) convertView.findViewById(R.id.friend_request_string);</span>
+<span class="fc" id="L86">        Button deleteButton = (Button) convertView.findViewById(R.id.delete_friend_request_btn);</span>
+
+        // Set the username that is displayed in the list.
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if(friendRequestType.equals(FriendRequestEnum.INCOMING))</span>
+<span class="fc" id="L90">            username.setText(friendRequest.getRequester().getUsername());</span>
+        else
+<span class="fc" id="L92">            username.setText(friendRequest.getAccepter().getUsername());</span>
+
+<span class="fc" id="L94">        deleteButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+                // Deny the friend request.
+<span class="fc" id="L98">                DeleteFriendRequest deleteFQ = new DeleteFriendRequest(activity.getClass().getSimpleName(), activity, FriendRequestCustomAdapter.this, friendRequest);</span>
+<span class="fc" id="L99">                deleteFQ.createRequestObject(user);</span>
+<span class="fc" id="L100">                String URL = Const.URL_DENY_FRIEND_REQUEST + &quot;/&quot; + friendRequest.getId();</span>
+<span class="fc" id="L101">                deleteFQ.sendRequest(Request.Method.PUT, URL);</span>
+<span class="fc" id="L102">            }</span>
+        });
+
+<span class="fc" id="L105">        return convertView;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

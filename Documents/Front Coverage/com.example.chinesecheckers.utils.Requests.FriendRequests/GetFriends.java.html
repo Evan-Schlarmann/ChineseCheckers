@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GetFriends.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.utils.Requests.FriendRequests</a> &gt; <span class="el_source">GetFriends.java</span></div><h1>GetFriends.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.utils.Requests.FriendRequests;
+
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import com.example.chinesecheckers.utils.Requests.VolleyArrayRequest;
+import com.example.chinesecheckers.UserProfile;
+import com.example.chinesecheckers.models.UserModel;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+/**
+ * Gets all friendships that have been accepted for the sent user and displays them in a list.
+ *
+ * &lt;br&gt;
+ * &lt;br&gt;Example:
+ * &lt;br&gt;GetFriends getFriends = new GetFriends(TAG, this, user, friendListView);
+ * &lt;br&gt;String URL = Const.URL_GET_FRIENDS + &quot;/&quot; + user.getUID() + &quot;/users&quot;;
+ * &lt;br&gt;getFriends.sendRequest(Request.Method.GET, URL);
+ */
+public class GetFriends extends VolleyArrayRequest {
+
+    private Context context;
+    private ListView friendListView;
+    private UserModel currentUser;
+    private ArrayList&lt;UserModel&gt; friendList;
+
+    /**
+     * Creates the HTTP object to get all accepted friendships for the current user.
+     *
+     * @param tag - activity identifier
+     * @param context - current context sending the request
+     * @param currentUser - logged in user
+     * @param friendListView - the list to display friendships
+     */
+    public GetFriends(String tag, Context context, UserModel currentUser, ListView friendListView) {
+<span class="fc" id="L46">        super(tag, &quot;json_friends&quot;);</span>
+<span class="fc" id="L47">        this.context = context;</span>
+<span class="fc" id="L48">        this.currentUser = currentUser;</span>
+<span class="fc" id="L49">        this.friendListView = friendListView;</span>
+<span class="fc" id="L50">        this.friendList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L51">    }</span>
+
+    /**
+     * Creates the list adapter for the friends list page and fills it with accepted friendships.
+     * Each friendship can be clicked to redirect to the user's profile page.
+     *
+     * @param response - json array response from the HTTP request
+     */
+    @Override
+    protected void handleResponse(JSONArray response) {
+<span class="fc" id="L61">        Log.d(TAG, response.toString());</span>
+
+        try {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            for(int i = 0; i &lt; response.length(); i++){</span>
+<span class="fc" id="L65">                JSONObject tempUser = response.getJSONObject(i);</span>
+
+<span class="fc" id="L67">                UserModel friend = new UserModel();</span>
+<span class="fc" id="L68">                friend.parseJson(tempUser);</span>
+<span class="fc" id="L69">                friendList.add(friend);</span>
+            }
+<span class="nc" id="L71">        } catch (JSONException e) {</span>
+<span class="nc" id="L72">            e.printStackTrace();</span>
+<span class="fc" id="L73">        }</span>
+
+<span class="fc" id="L75">        ArrayAdapter&lt;UserModel&gt; arrayAdapter = new ArrayAdapter&lt;&gt;(context.getApplicationContext(),</span>
+                androidx.appcompat.R.layout.support_simple_spinner_dropdown_item, friendList);
+
+<span class="fc" id="L78">        friendListView.setAdapter(arrayAdapter);</span>
+
+        // Allows user to click and go to the friends profile page.
+<span class="fc" id="L81">        friendListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {</span>
+            @Override
+            public void onItemClick(AdapterView&lt;?&gt; adapterView, View view, int pos, long id) {
+<span class="fc" id="L84">                UserModel chosenUser = (UserModel) friendListView.getItemAtPosition(pos);</span>
+
+<span class="fc" id="L86">                Intent i = new Intent(context.getApplicationContext(), UserProfile.class);</span>
+<span class="fc" id="L87">                i.putExtra(&quot;user&quot;, currentUser);</span>
+<span class="fc" id="L88">                i.putExtra(&quot;chosenUser&quot;, chosenUser);</span>
+<span class="fc" id="L89">                context.startActivity(i);</span>
+<span class="fc" id="L90">            }</span>
+        });
+<span class="fc" id="L92">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

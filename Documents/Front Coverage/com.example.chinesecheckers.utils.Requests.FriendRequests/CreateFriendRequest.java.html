@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreateFriendRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.utils.Requests.FriendRequests</a> &gt; <span class="el_source">CreateFriendRequest.java</span></div><h1>CreateFriendRequest.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.utils.Requests.FriendRequests;
+
+import android.app.Activity;
+
+import com.example.chinesecheckers.utils.Requests.VolleyRequest;
+import com.example.chinesecheckers.models.FriendRequestModel;
+import com.example.chinesecheckers.models.UserModel;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+/**
+ * creates a friend request and refreshes the current activity if the activity passed
+ * is not null and refreshActivity is true.
+ *
+ * &lt;br&gt;
+ * &lt;br&gt;Example:
+ * &lt;br&gt;CreateFriendRequest friendRequest = new CreateFriendRequest(TAG, activity, true);
+ * &lt;br&gt;friendRequest.createRequestObject(user, chosenUser);
+ * &lt;br&gt;friendRequest.sendRequest(Request.Method.POST, Const.URL_CREATE_FRIEND_REQUEST);
+ */
+public class CreateFriendRequest extends VolleyRequest {
+
+    private boolean refreshActivity;
+    private Activity activity;
+
+    /**
+     * Creates a HTTP request object to create a friend list and refresh the activity.
+     *
+     * @param tag - activity identifier
+     * @param activity - activity sending the request
+     * @param refreshActivity - true to refresh the activity, false to not refresh it
+     */
+    public CreateFriendRequest(String tag, Activity activity, boolean refreshActivity){
+<span class="fc" id="L35">        super(tag, &quot;json_create_friend_request&quot;);</span>
+<span class="fc" id="L36">        this.refreshActivity = refreshActivity;</span>
+<span class="fc" id="L37">        this.activity = activity;</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Creates the request object of who created it (requester) and the target
+     * of the friend request (accepter).
+     *
+     * @param requestor - user creating the friend request
+     * @param accepter - target of the friend request
+     */
+    public void createRequestObject(UserModel requestor, UserModel accepter){
+        //make JSON object packet
+<span class="fc" id="L49">        requestObject = new JSONObject();</span>
+
+        try {
+            FriendRequestModel friendRequest;
+
+<span class="fc" id="L54">            JSONObject requesterObject = new JSONObject();</span>
+<span class="fc" id="L55">            requesterObject.put(&quot;userId&quot;, requestor.getUID());</span>
+
+<span class="fc" id="L57">            JSONObject accepterObject = new JSONObject();</span>
+<span class="fc" id="L58">            accepterObject.put(&quot;userId&quot;, accepter.getUID());</span>
+
+<span class="fc" id="L60">            requestObject.put(&quot;requester&quot;, requesterObject);</span>
+<span class="fc" id="L61">            requestObject.put(&quot;accepter&quot;, accepterObject);</span>
+<span class="fc" id="L62">            requestObject.put(&quot;accepted&quot;, &quot;false&quot;);</span>
+
+<span class="nc" id="L64">        } catch (JSONException e) {</span>
+<span class="nc" id="L65">            e.printStackTrace();</span>
+<span class="fc" id="L66">        }</span>
+<span class="fc" id="L67">    }</span>
+
+    /**
+     * Refreshes the activity without a transition screen making it seamless.
+     *
+     * @param response - json object response from the HTTP request
+     */
+    @Override
+    protected void handleResponse(JSONObject response) {
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">        if(activity != null &amp;&amp; refreshActivity){</span>
+<span class="fc" id="L77">            activity.finish();</span>
+<span class="fc" id="L78">            activity.overridePendingTransition(0, 0);</span>
+<span class="fc" id="L79">            activity.startActivity(activity.getIntent());</span>
+<span class="fc" id="L80">            activity.overridePendingTransition(0, 0);</span>
+        }
+<span class="fc" id="L82">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LobbyPage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">LobbyPage.java</span></div><h1>LobbyPage.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.example.chinesecheckers.models.PublicLobbyModel;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.LeaveLobbyReq;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.LobbyGameReq;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.drafts.Draft_6455;
+import org.java_websocket.handshake.ServerHandshake;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+
+/**
+ *  LobbyPage is the user 'hub' where users are grouped before a game begins.
+ *  Users can navigate to either leave the lobby or wait for the game to start.
+ */
+<span class="nc" id="L32">public class LobbyPage extends AppCompatActivity {</span>
+<span class="nc" id="L33">    private final String tag_json_leaveLobby = &quot;json_leave&quot;;</span>
+<span class="nc" id="L34">    private final String TAG = LobbyPage.class.getSimpleName();</span>
+    private Button leaveLobby;
+    private TextView lobbyNumber;
+    private PublicLobbyModel lobby;
+    private UserModel user;
+    private ArrayList&lt;TextView&gt; playerList;
+    private WebSocketClient lobbyChatWebSocket;
+
+     /**
+     * On Create sets up the View with a websocket that listens for when other
+      * players join or leave updating the screen to display the lobby. The game
+      * activity starts when the lobby is full.
+     *
+     * It creates buttons to send a user into a game, or to return them to the home page
+     *
+     * @param savedInstanceState - contains all saved instances and information.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L53">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L54">        setContentView(R.layout.activity_lobby_page);</span>
+<span class="nc" id="L55">        leaveLobby = findViewById(R.id.leavePublicLobby);</span>
+<span class="nc" id="L56">        lobbyNumber = findViewById(R.id.publicLobbyId);</span>
+<span class="nc" id="L57">        lobby = (PublicLobbyModel) getIntent().getSerializableExtra(&quot;lobby&quot;);</span>
+<span class="nc" id="L58">        user = (UserModel) getIntent().getSerializableExtra(&quot;user&quot;);</span>
+
+<span class="nc" id="L60">        lobbyNumber.setText(&quot;Lobby: &quot; + lobby.getLobbyId());</span>
+
+<span class="nc" id="L62">        loadPlayerViews();</span>
+<span class="nc" id="L63">        joinStatusWebSocket();</span>
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if(lobby.getPlayerCount() == lobby.getCurrentPlayerCount()){</span>
+            // send the request to generate a game
+            // that request sends a message to everyone in the lobby websocket to join.
+<span class="nc" id="L68">            LobbyGameReq gameReq = new LobbyGameReq(TAG, lobbyChatWebSocket);</span>
+<span class="nc" id="L69">            gameReq.createRequestObject(lobby);</span>
+<span class="nc" id="L70">            gameReq.sendRequest(Request.Method.POST, Const.URL_CREATE_GAME);</span>
+        }
+
+        //button to leave lobby and go back to home page
+<span class="nc" id="L74">        leaveLobby.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L77">                lobbyChatWebSocket.close();</span>
+
+<span class="nc" id="L79">                LeaveLobbyReq leaveLobbyReq = new LeaveLobbyReq(TAG, LobbyPage.this);</span>
+<span class="nc" id="L80">                leaveLobbyReq.createRequestObject(user);</span>
+<span class="nc" id="L81">                leaveLobbyReq.sendRequest(Request.Method.POST, Const.URL_LEAVE_LOBBY);</span>
+<span class="nc" id="L82">                LobbyPage.this.finish();</span>
+<span class="nc" id="L83">            }</span>
+        });
+<span class="nc" id="L85">    }</span>
+
+    /**
+     * join status web socket joins the private lobby chat web socket and monitors when
+     * people join, leave, and ready up to refresh the page and display up to date information.
+     */
+    private void joinStatusWebSocket() {
+<span class="nc" id="L92">        Draft[] drafts = {new Draft_6455()};</span>
+
+        /**
+         * If running this on an android device, make sure it is on the same network as your
+         * computer, and change the ip address to that of your computer.
+         * If running on the emulator, you can use localhost.
+         */
+<span class="nc" id="L99">        String w = Const.URL_PRIVATE_LOBBY_CHAT(lobby.getLobbyId(), user.getUID());</span>
+
+        try {
+<span class="nc" id="L102">            Log.d(&quot;Socket:&quot;, &quot;Trying socket&quot;);</span>
+<span class="nc" id="L103">            lobbyChatWebSocket = new WebSocketClient(new URI(w), (Draft) drafts[0]) {</span>
+
+                @Override
+                public void onMessage(String message) {
+<span class="nc" id="L107">                    Log.d(&quot;&quot;, &quot;run() returned: &quot; + message);</span>
+
+                    // a user is joining or leaving.
+<span class="nc" id="L110">                    String username = message.substring(0, message.indexOf(&quot; &quot;));</span>
+<span class="nc" id="L111">                    String userAction = message.substring(message.indexOf(&quot; &quot;) + 1);</span>
+<span class="nc" id="L112">                    boolean isNewPlayer = true;</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                    for (int i = 1; i &lt;= lobby.getCurrentPlayerCount(); i++) {</span>
+
+                        // Look and see if it is a new user and add them
+                        // or return if they are not a new user to the lobby.
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                        if (lobby.getPlayer(i).getUsername().equals(username)) {</span>
+<span class="nc" id="L118">                            isNewPlayer = false;</span>
+                        }
+                    }
+
+                    // when a new player joins the lobby
+<span class="nc bnc" id="L123" title="All 4 branches missed.">                    if (isNewPlayer &amp;&amp; userAction.equals(&quot;has Joined the Lobby&quot;)) {</span>
+
+                        // add the user to the lobby
+<span class="nc" id="L126">                        UserModel tempUser = new UserModel();</span>
+<span class="nc" id="L127">                        tempUser.setUsername(username);</span>
+<span class="nc" id="L128">                        lobby.addPlayer(tempUser);</span>
+
+                        // reload the page.
+<span class="nc" id="L131">                        loadPlayerViews();</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">                    } else if (userAction.equals(&quot;has Left the Lobby&quot;)) { // a player left the lobby.</span>
+
+<span class="nc" id="L134">                        UserModel tempUser = new UserModel();</span>
+<span class="nc" id="L135">                        tempUser.setUsername(username);</span>
+<span class="nc" id="L136">                        lobby.removePlayer(tempUser);</span>
+                        // reload the page.
+<span class="nc" id="L138">                        loadPlayerViews();</span>
+                    }
+
+<span class="nc" id="L141">                    String[] messageInfo = userAction.split(&quot; &quot;);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                    if(messageInfo.length == 4){</span>
+
+<span class="nc" id="L144">                        boolean isLobby = messageInfo[0].equals(&quot;lobbyId&quot;);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                        if(!isLobby)</span>
+<span class="nc" id="L146">                            return;</span>
+
+<span class="nc" id="L148">                        long lobbyId = Long.parseLong(messageInfo[1]);</span>
+<span class="nc" id="L149">                        long gameId = Long.parseLong(messageInfo[3]);</span>
+
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                        if(lobbyId != lobby.getLobbyId())</span>
+<span class="nc" id="L152">                            return;</span>
+
+                        // start the game activity.
+<span class="nc" id="L155">                        Intent i = new Intent(LobbyPage.this, GamePage.class);</span>
+<span class="nc" id="L156">                        i.putExtra(&quot;user&quot;, user);</span>
+<span class="nc" id="L157">                        i.putExtra(&quot;lobby&quot;, lobby);</span>
+<span class="nc" id="L158">                        i.putExtra(&quot;gameId&quot;, gameId);</span>
+
+<span class="nc" id="L160">                        lobbyChatWebSocket.close();</span>
+<span class="nc" id="L161">                        startActivity(i);</span>
+<span class="nc" id="L162">                        LobbyPage.this.finish();</span>
+                    }
+<span class="nc" id="L164">                }</span>
+
+                @Override
+                public void onOpen(ServerHandshake handshake) {
+<span class="nc" id="L168">                    Log.d(&quot;OPEN&quot;, &quot;run() returned: &quot; + &quot;is connecting&quot;);</span>
+
+<span class="nc" id="L170">                }</span>
+
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+<span class="nc" id="L174">                    Log.d(&quot;CLOSE&quot;, &quot;onClose() returned: &quot; + reason);</span>
+<span class="nc" id="L175">                }</span>
+
+                @Override
+                public void onError(Exception e) {
+<span class="nc" id="L179">                    Log.d(&quot;Exception:&quot;, e.toString());</span>
+<span class="nc" id="L180">                }</span>
+            };
+<span class="nc" id="L182">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L183">            Log.d(&quot;Exception:&quot;, e.getMessage().toString());</span>
+<span class="nc" id="L184">            e.printStackTrace();</span>
+<span class="nc" id="L185">        }</span>
+<span class="nc" id="L186">        lobbyChatWebSocket.connect();</span>
+<span class="nc" id="L187">    }</span>
+
+
+    /**
+     * load player views updates the private lobby page to display players
+     * and their ready up status.
+     */
+    private void loadPlayerViews() {
+
+<span class="nc" id="L196">        LobbyPage.this.runOnUiThread(new Runnable() {</span>
+
+            @Override
+            public void run() {
+
+<span class="nc" id="L201">                playerList = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L203">                playerList.add(findViewById(R.id.publicLobbyPlayer1));</span>
+<span class="nc" id="L204">                playerList.add(findViewById(R.id.publicLobbyPlayer2));</span>
+<span class="nc" id="L205">                playerList.add(findViewById(R.id.publicLobbyPlayer3));</span>
+<span class="nc" id="L206">                playerList.add(findViewById(R.id.publicLobbyPlayer4));</span>
+<span class="nc" id="L207">                playerList.add(findViewById(R.id.publicLobbyPlayer5));</span>
+<span class="nc" id="L208">                playerList.add(findViewById(R.id.publicLobbyPlayer6));</span>
+
+                // disable all views that are not necessary for smaller game sizes.
+                // reset all the needed views to their default.
+<span class="nc bnc" id="L212" title="All 2 branches missed.">                for (int i = 0; i &lt; 6; i++) {</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                    if (i &lt;= lobby.getPlayerCount() - 1) {</span>
+<span class="nc" id="L214">                        playerList.get(i).setText(&quot;Waiting...&quot;);</span>
+<span class="nc" id="L215">                        continue;</span>
+                    }
+
+<span class="nc" id="L218">                    playerList.get(i).setVisibility(View.GONE);</span>
+                }
+
+                // Update all the shown views with correct usernames and statuses.
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                for (int i = 1; i &lt;= lobby.getPlayerCount(); i++) {</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">                    if (lobby.getCurrentPlayerCount() &lt; i)</span>
+<span class="nc" id="L224">                        return;</span>
+
+<span class="nc" id="L226">                    UserModel player = lobby.getPlayer(i);</span>
+<span class="nc" id="L227">                    playerList.get(i - 1).setText(player.getUsername());</span>
+                }
+<span class="nc" id="L229">            }</span>
+        });
+<span class="nc" id="L231">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">UserList.java</span></div><h1>UserList.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import static com.example.chinesecheckers.utils.VolleyProgressDialog.dismissProgressDialog;
+import static com.example.chinesecheckers.utils.VolleyProgressDialog.showProgressDialog;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.chinesecheckers.app.AppController;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Objects;
+
+/**
+ * UserList displays all users in a scrollable list where it displays the user's
+ * username and clicking on a row send you to their profile page.
+ */
+<span class="fc" id="L38">public class UserList extends AppCompatActivity {</span>
+
+<span class="fc" id="L40">    private final String TAG = UserList.class.getSimpleName();</span>
+    // Use these tags to cancel requests
+<span class="fc" id="L42">    private final String tag_json_userList = &quot;json_userList&quot;;</span>
+
+    private ArrayList&lt;UserModel&gt; userList;
+    private ProgressDialog pDialog;
+    private ListView userListView;
+    private UserModel user;
+
+
+    /**
+     * onCreate links the XML view and calls the make user list request.
+     *
+     * @param savedInstanceState - contains all saved instances and information.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L57">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L58">        setContentView(R.layout.activity_user_list);</span>
+
+<span class="fc" id="L60">        userListView = findViewById(R.id.userList);</span>
+<span class="fc" id="L61">        userList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L62">        user = (UserModel) getIntent().getSerializableExtra(&quot;user&quot;);</span>
+
+<span class="fc" id="L64">        pDialog = new ProgressDialog(this);</span>
+<span class="fc" id="L65">        pDialog.setMessage(&quot;Loading...&quot;);</span>
+<span class="fc" id="L66">        pDialog.setCancelable(false);</span>
+
+<span class="fc" id="L68">        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);</span>
+
+<span class="fc" id="L70">        makeUserListReq();</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * this method calls the servers and gets all users back in an array list. It then
+     * populates the array into an adapter that is displayed to the user.
+     */
+    private void makeUserListReq() {
+<span class="fc" id="L78">        showProgressDialog(pDialog);</span>
+<span class="fc" id="L79">        JsonArrayRequest req = new JsonArrayRequest(Const.URL_USERS_ALL,</span>
+<span class="fc" id="L80">                new Response.Listener&lt;JSONArray&gt;() {</span>
+                    @Override
+                    public void onResponse(JSONArray response) {
+<span class="fc" id="L83">                        Log.d(TAG, response.toString());</span>
+                        
+                        try {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                            for(int i = 0; i &lt; response.length(); i++){</span>
+<span class="fc" id="L87">                                JSONObject tempUser = response.getJSONObject(i);</span>
+
+<span class="fc" id="L89">                                UserModel newUser = new UserModel();</span>
+<span class="fc" id="L90">                                newUser.parseJson(tempUser);</span>
+
+<span class="fc" id="L92">                                userList.add(newUser);</span>
+                            }
+<span class="nc" id="L94">                        } catch (JSONException e) {</span>
+<span class="nc" id="L95">                            e.printStackTrace();</span>
+<span class="fc" id="L96">                        }</span>
+
+<span class="fc" id="L98">                        ArrayAdapter&lt;UserModel&gt; arrayAdapter = new ArrayAdapter&lt;&gt;(getApplicationContext(),</span>
+<span class="fc" id="L99">                                androidx.appcompat.R.layout.support_simple_spinner_dropdown_item, userList);</span>
+
+<span class="fc" id="L101">                        userListView.setAdapter(arrayAdapter);</span>
+<span class="fc" id="L102">                        userListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {</span>
+                            @Override
+                            public void onItemClick(AdapterView&lt;?&gt; adapterView, View view, int pos, long id) {
+<span class="fc" id="L105">                                UserModel chosenUser = (UserModel) userListView.getItemAtPosition(pos);</span>
+
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                                if(user.getRole().equals(&quot;admin&quot;)){</span>
+<span class="fc" id="L108">                                    Intent i = new Intent(UserList.this, AdminUserProfilePage.class);</span>
+<span class="fc" id="L109">                                    i.putExtra(&quot;user&quot;, user);</span>
+<span class="fc" id="L110">                                    i.putExtra(&quot;chosenUser&quot;, chosenUser);</span>
+<span class="fc" id="L111">                                    startActivity(i);</span>
+<span class="fc" id="L112">                                }</span>
+                                else{
+<span class="fc" id="L114">                                    Intent i = new Intent(UserList.this, UserProfile.class);</span>
+<span class="fc" id="L115">                                    i.putExtra(&quot;user&quot;, user);</span>
+<span class="fc" id="L116">                                    i.putExtra(&quot;chosenUser&quot;, chosenUser);</span>
+<span class="fc" id="L117">                                    startActivity(i);</span>
+                                }
+<span class="fc" id="L119">                            }</span>
+
+                        });
+<span class="fc" id="L122">                        dismissProgressDialog(pDialog);</span>
+<span class="fc" id="L123">                    }</span>
+<span class="fc" id="L124">                }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L127">                VolleyLog.d(TAG, &quot;Error: &quot; + error.getMessage());</span>
+<span class="nc" id="L128">                dismissProgressDialog(pDialog);</span>
+<span class="nc" id="L129">            }</span>
+        });
+
+        // Adding request to request queue
+<span class="fc" id="L133">        AppController.getInstance().addToRequestQueue(req,</span>
+                tag_json_userList);
+
+        // Cancelling request
+        // ApplicationController.getInstance().getRequestQueue().cancelAll(tag_json_arry);
+<span class="fc" id="L138">    }</span>
+
+    /**
+     * onOptionsItemSelected finishes the activity when the support action bar back button is pressed.
+     *
+     * @param item - item that is selected.
+     * @return boolean
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if (item.getItemId() == android.R.id.home) {</span>
+<span class="fc" id="L149">            finish();</span>
+<span class="fc" id="L150">            return true;</span>
+        }
+
+<span class="nc" id="L153">        return super.onOptionsItemSelected(item);</span>
+    }
+
+    /**
+     * When the page is visible again reload the page to get possible changes.
+     */
+    @Override
+    protected void onRestart () {
+<span class="fc" id="L161">        super.onRestart();</span>
+<span class="fc" id="L162">        this.finish();</span>
+<span class="fc" id="L163">        this.startActivity(this.getIntent());</span>
+<span class="fc" id="L164">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

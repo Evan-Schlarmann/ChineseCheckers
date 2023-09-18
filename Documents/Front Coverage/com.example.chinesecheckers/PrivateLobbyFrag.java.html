@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrivateLobbyFrag.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">PrivateLobbyFrag.java</span></div><h1>PrivateLobbyFrag.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import android.content.Intent;
+import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.example.chinesecheckers.models.PrivateLobbyModel;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.LeaveLobbyReq;
+import com.example.chinesecheckers.utils.Requests.LobbyRequests.LobbyGameReq;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.drafts.Draft_6455;
+import org.java_websocket.handshake.ServerHandshake;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+
+/**
+ * A simple {@link Fragment} subclass.
+ * &lt;p&gt;
+ * This fragment displays the private lobby and everyone in it.
+ * It also allows traversal to the private lobby chat. It creates a game
+ * and loads the activity when all players have readied up.
+ */
+public class PrivateLobbyFrag extends Fragment {
+
+<span class="fc" id="L40">    private final String TAG = PrivateLobbyPage.class.getSimpleName();</span>
+
+    private UserModel user;
+    private PrivateLobbyModel lobby;
+    private ArrayList&lt;TextView&gt; playerList;
+    private ArrayList&lt;ImageView&gt; playerStatusList;
+    private WebSocketClient lobbyChatWebSocket;
+    private WebSocketClient serviceTunnelWebSocket;
+
+    public PrivateLobbyFrag() {
+<span class="fc" id="L50">        super(R.layout.fragment_private_lobby);</span>
+<span class="fc" id="L51">    }</span>
+
+    /**
+     * This method loads all the view components and creates on click listeners.
+     * It also gets the passed parameters from the private lobby page.
+     *
+     * @param view               The View returned by {@link #onViewCreated(View, Bundle)}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     *                           from a previous saved state as given here.
+     */
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+
+<span class="fc" id="L64">        TextView lobbyIdView = view.findViewById(R.id.privateLobbyId);</span>
+<span class="fc" id="L65">        TextView joinCodeView = view.findViewById(R.id.privateLobbyJoinCode);</span>
+<span class="fc" id="L66">        Button openChatWebsocket = view.findViewById(R.id.chatWebsocketButton);</span>
+<span class="fc" id="L67">        Button readyUp = view.findViewById(R.id.privateLobbyReadyUp);</span>
+<span class="fc" id="L68">        Button leaveLobby = view.findViewById(R.id.leavePrivateLobby);</span>
+<span class="fc" id="L69">        user = (UserModel) requireArguments().getSerializable(&quot;user&quot;);</span>
+<span class="fc" id="L70">        lobby = (PrivateLobbyModel) requireArguments().getSerializable(&quot;lobby&quot;);</span>
+
+        // Lobby: {id}
+<span class="fc" id="L73">        String tmpText = &quot;Lobby: &quot; + lobby.getLobbyId();</span>
+<span class="fc" id="L74">        lobbyIdView.setText(tmpText);</span>
+
+        // Join Code: {joinCode}
+<span class="fc" id="L77">        tmpText = &quot;Join Code: &quot; + lobby.getJoinCode();</span>
+<span class="fc" id="L78">        joinCodeView.setText(tmpText);</span>
+
+        // Load the player views and join both web sockets.
+<span class="fc" id="L81">        loadPlayerViews();</span>
+<span class="fc" id="L82">        joinStatusWebSocket();</span>
+<span class="fc" id="L83">        joinServiceTunnel();</span>
+
+<span class="fc" id="L85">        readyUp.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+
+<span class="fc" id="L89">                boolean everyoneReady = true;</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                if(lobby.getCurrentPlayerCount() != lobby.getPlayerCount()) { everyoneReady = false; }</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                for (int i = 1; i &lt;= lobby.getCurrentPlayerCount(); i++) {</span>
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                    if(lobby.getPlayer(i).getUsername().equals(user.getUsername())) {</span>
+<span class="fc" id="L95">                        lobby.changePlayerStatus(i, true);</span>
+                    }
+
+                    // check if all players are ready
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                    if (lobby.getPlayerStatus(i).equals(false))</span>
+<span class="nc" id="L100">                        everyoneReady = false;</span>
+                }
+
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                if (everyoneReady) {</span>
+                    // send the request to generate a game
+                    // that request sends a message to everyone in the lobby websocket to join.
+<span class="nc" id="L106">                    LobbyGameReq gameReq = new LobbyGameReq(TAG, serviceTunnelWebSocket);</span>
+<span class="nc" id="L107">                    gameReq.createRequestObject(lobby);</span>
+<span class="nc" id="L108">                    gameReq.sendRequest(Request.Method.POST, Const.URL_CREATE_GAME);</span>
+<span class="nc" id="L109">                }else{</span>
+                    // send the ready up to all other players if not everyone was ready.
+<span class="fc" id="L111">                    serviceTunnelWebSocket.send(&quot;lobbyId &quot; + lobby.getLobbyId() + &quot; &quot; + user.getUsername() + &quot; ready&quot;);</span>
+                }
+<span class="fc" id="L113">            }</span>
+        });
+
+<span class="fc" id="L116">        leaveLobby.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L119">                lobbyChatWebSocket.close();</span>
+<span class="fc" id="L120">                serviceTunnelWebSocket.close();</span>
+
+<span class="fc" id="L122">                LeaveLobbyReq leaveLobbyReq = new LeaveLobbyReq(TAG, getActivity());</span>
+<span class="fc" id="L123">                leaveLobbyReq.createRequestObject(user);</span>
+<span class="fc" id="L124">                leaveLobbyReq.sendRequest(Request.Method.POST, Const.URL_LEAVE_LOBBY);</span>
+<span class="fc" id="L125">                requireActivity().finish();</span>
+<span class="fc" id="L126">            }</span>
+        });
+
+<span class="fc" id="L129">        openChatWebsocket.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+
+                // Load the chat fragment and detach this fragment
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                if (savedInstanceState == null) {</span>
+<span class="fc" id="L135">                    lobbyChatWebSocket.close();</span>
+<span class="fc" id="L136">                    serviceTunnelWebSocket.close();</span>
+
+<span class="fc" id="L138">                    lobby.changePlayerStatus(user, false);</span>
+
+<span class="fc" id="L140">                    Bundle bundle = new Bundle();</span>
+<span class="fc" id="L141">                    bundle.putSerializable(&quot;user&quot;, user);</span>
+<span class="fc" id="L142">                    bundle.putSerializable(&quot;lobby&quot;, lobby);</span>
+
+<span class="fc" id="L144">                    requireActivity().getSupportFragmentManager().beginTransaction()</span>
+<span class="fc" id="L145">                            .replace(R.id.privateLobbyActivity, PrivateLobbyChatFrag.class, bundle)</span>
+<span class="fc" id="L146">                            .commit();</span>
+                }
+<span class="fc" id="L148">            }</span>
+        });
+<span class="fc" id="L150">    }</span>
+
+    /**
+     * join service tunnel creates a web socket that monitors if the game
+     * has started and if so join the game activity.
+     */
+    private void joinServiceTunnel(){
+<span class="fc" id="L157">        Draft[] drafts = {new Draft_6455()};</span>
+
+        /**
+         * If running this on an android device, make sure it is on the same network as your
+         * computer, and change the ip address to that of your computer.
+         * If running on the emulator, you can use localhost.
+         */
+<span class="fc" id="L164">        String w = Const.URL_SERVICE_TUNNEL_WEBSOCKET + user.getUID();</span>
+
+        try {
+<span class="fc" id="L167">            Log.d(&quot;Socket:&quot;, &quot;Trying socket&quot;);</span>
+<span class="fc" id="L168">            serviceTunnelWebSocket = new WebSocketClient(new URI(w), (Draft) drafts[0]) {</span>
+
+                @Override
+                public void onMessage(String message) {
+<span class="fc" id="L172">                    Log.d(&quot;&quot;, &quot;run() returned: &quot; + message);</span>
+
+                    // if receiving this lobbies lobbyId and a gameID join the game
+<span class="fc" id="L175">                    String[] messageType = message.split(&quot; &quot;);</span>
+
+                    // if less than 4 the message can't be parsed.
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                    if(messageType.length &lt; 4) {</span>
+<span class="fc" id="L179">                        return;</span>
+                    }
+
+<span class="fc" id="L182">                    boolean isLobby = messageType[0].equals(&quot;lobbyId&quot;);</span>
+<span class="fc" id="L183">                    long lobbyId = Long.parseLong(messageType[1]);</span>
+<span class="fc" id="L184">                    boolean isGame = messageType[2].equals(&quot;gameId&quot;);</span>
+<span class="fc" id="L185">                    long gameId = -1;</span>
+
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">                    if (isGame) {</span>
+<span class="nc" id="L188">                        gameId = Long.parseLong(messageType[3]);</span>
+                    }
+
+                    // the message is for this lobby load the new game.
+<span class="pc bpc" id="L192" title="3 of 6 branches missed.">                    if(isLobby &amp;&amp; lobbyId == lobby.getLobbyId() &amp;&amp; isGame){</span>
+
+                        // Move into the game activity.
+<span class="nc" id="L195">                        Intent i = new Intent(getActivity(), GamePage.class);</span>
+<span class="nc" id="L196">                        i.putExtra(&quot;user&quot;, user);</span>
+<span class="nc" id="L197">                        i.putExtra(&quot;lobby&quot;, lobby);</span>
+<span class="nc" id="L198">                        i.putExtra(&quot;gameId&quot;, gameId);</span>
+
+<span class="nc" id="L200">                        lobbyChatWebSocket.close();</span>
+<span class="nc" id="L201">                        serviceTunnelWebSocket.close();</span>
+<span class="nc" id="L202">                        startActivity(i);</span>
+<span class="nc" id="L203">                        requireActivity().finish();</span>
+<span class="nc" id="L204">                        return;</span>
+                    }
+
+                    // Check for a ready up message.
+<span class="fc" id="L208">                    String messageUser = messageType[2];</span>
+<span class="fc" id="L209">                    boolean readyUp = messageType[3].equals(&quot;ready&quot;);</span>
+<span class="pc bpc" id="L210" title="3 of 6 branches missed.">                    if(isLobby &amp;&amp; lobbyId == lobby.getLobbyId() &amp;&amp; readyUp){</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                        for (int i = 1; i &lt;= lobby.getCurrentPlayerCount(); i++) {</span>
+
+                            // update the user's ready status
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">                            if (lobby.getPlayer(i).getUsername().equals(messageUser)) {</span>
+<span class="fc" id="L215">                                lobby.changePlayerStatus(i, true);</span>
+                            }
+                        }
+<span class="fc" id="L218">                        loadPlayerViews();</span>
+                    }
+<span class="fc" id="L220">                }</span>
+
+                @Override
+                public void onOpen(ServerHandshake handshake) {
+<span class="fc" id="L224">                    Log.d(&quot;OPEN&quot;, &quot;run() returned: &quot; + &quot;is connecting&quot;);</span>
+
+<span class="fc" id="L226">                }</span>
+
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+<span class="fc" id="L230">                    Log.d(&quot;CLOSE&quot;, &quot;onClose() returned: &quot; + reason);</span>
+<span class="fc" id="L231">                }</span>
+
+                @Override
+                public void onError(Exception e) {
+<span class="nc" id="L235">                    Log.d(&quot;Exception:&quot;, e.toString());</span>
+
+<span class="nc" id="L237">                }</span>
+            };
+<span class="nc" id="L239">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L240">            Log.d(&quot;Exception:&quot;, e.getMessage().toString());</span>
+<span class="nc" id="L241">            e.printStackTrace();</span>
+<span class="fc" id="L242">        }</span>
+<span class="fc" id="L243">        serviceTunnelWebSocket.connect();</span>
+<span class="fc" id="L244">    }</span>
+
+    /**
+     * join status web socket joins the private lobby chat web socket and monitors when
+     * people join, leave, and ready up to refresh the page and display up to date information.
+     */
+    private void joinStatusWebSocket() {
+<span class="fc" id="L251">        Draft[] drafts = {new Draft_6455()};</span>
+
+        /**
+         * If running this on an android device, make sure it is on the same network as your
+         * computer, and change the ip address to that of your computer.
+         * If running on the emulator, you can use localhost.
+         */
+<span class="fc" id="L258">        String w = Const.URL_PRIVATE_LOBBY_CHAT(lobby.getLobbyId(), user.getUID());</span>
+
+        try {
+<span class="fc" id="L261">            Log.d(&quot;Socket:&quot;, &quot;Trying socket&quot;);</span>
+<span class="fc" id="L262">            lobbyChatWebSocket = new WebSocketClient(new URI(w), (Draft) drafts[0]) {</span>
+
+                @Override
+                public void onMessage(String message) {
+<span class="fc" id="L266">                    Log.d(&quot;&quot;, &quot;run() returned: &quot; + message);</span>
+
+                    // otherwise a user is joining or leaving.
+<span class="fc" id="L269">                    String username = message.substring(0, message.indexOf(&quot; &quot;));</span>
+<span class="fc" id="L270">                    String userAction = message.substring(message.indexOf(&quot; &quot;) + 1);</span>
+<span class="fc" id="L271">                    boolean isNewPlayer = true;</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">                    for (int i = 1; i &lt;= lobby.getCurrentPlayerCount(); i++) {</span>
+
+                        // Look and see if it is a new user and add them
+                        // or return if they are not a new user to the lobby.
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">                        if (lobby.getPlayer(i).getUsername().equals(username)) {</span>
+<span class="fc" id="L277">                            isNewPlayer = false;</span>
+                        }
+                    }
+
+                    // when a new player joins the lobby
+<span class="pc bpc" id="L282" title="3 of 4 branches missed.">                    if (isNewPlayer &amp;&amp; userAction.equals(&quot;has Joined the Lobby&quot;)) {</span>
+
+                        // add the user to the lobby
+<span class="nc" id="L285">                        UserModel tempUser = new UserModel();</span>
+<span class="nc" id="L286">                        tempUser.setUsername(username);</span>
+<span class="nc" id="L287">                        lobby.addPlayer(tempUser);</span>
+
+                        // reload the page.
+<span class="nc" id="L290">                        loadPlayerViews();</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">                    } else if (userAction.equals(&quot;has Left the Lobby&quot;)) { // a player left the lobby.</span>
+
+<span class="nc" id="L293">                        UserModel tempUser = new UserModel();</span>
+<span class="nc" id="L294">                        tempUser.setUsername(username);</span>
+<span class="nc" id="L295">                        lobby.removePlayer(tempUser);</span>
+                        // reload the page.
+<span class="nc" id="L297">                        loadPlayerViews();</span>
+                    }
+<span class="fc" id="L299">                }</span>
+
+                @Override
+                public void onOpen(ServerHandshake handshake) {
+<span class="fc" id="L303">                    Log.d(&quot;OPEN&quot;, &quot;run() returned: &quot; + &quot;is connecting&quot;);</span>
+
+<span class="fc" id="L305">                }</span>
+
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+<span class="fc" id="L309">                    Log.d(&quot;CLOSE&quot;, &quot;onClose() returned: &quot; + reason);</span>
+<span class="fc" id="L310">                }</span>
+
+                @Override
+                public void onError(Exception e) {
+<span class="nc" id="L314">                    Log.d(&quot;Exception:&quot;, e.toString());</span>
+<span class="nc" id="L315">                    e.printStackTrace();</span>
+<span class="nc" id="L316">                }</span>
+            };
+<span class="nc" id="L318">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L319">            Log.d(&quot;Exception:&quot;, e.getMessage().toString());</span>
+<span class="nc" id="L320">            e.printStackTrace();</span>
+<span class="fc" id="L321">        }</span>
+<span class="fc" id="L322">        lobbyChatWebSocket.connect();</span>
+<span class="fc" id="L323">    }</span>
+
+
+    /**
+     * load player views updates the private lobby page to display players
+     * and their ready up status.
+     */
+    private void loadPlayerViews() {
+
+<span class="fc" id="L332">        requireActivity().runOnUiThread(new Runnable() {</span>
+
+            @Override
+            public void run() {
+
+<span class="fc" id="L337">                playerList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L338">                playerStatusList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L340">                playerList.add(requireView().findViewById(R.id.privateLobbyPlayer1));</span>
+<span class="fc" id="L341">                playerList.add(requireView().findViewById(R.id.privateLobbyPlayer2));</span>
+<span class="fc" id="L342">                playerList.add(requireView().findViewById(R.id.privateLobbyPlayer3));</span>
+<span class="fc" id="L343">                playerList.add(requireView().findViewById(R.id.privateLobbyPlayer4));</span>
+<span class="fc" id="L344">                playerList.add(requireView().findViewById(R.id.privateLobbyPlayer5));</span>
+<span class="fc" id="L345">                playerList.add(requireView().findViewById(R.id.privateLobbyPlayer6));</span>
+
+<span class="fc" id="L347">                playerStatusList.add(requireView().findViewById(R.id.privateLobbyPlayerStatus1));</span>
+<span class="fc" id="L348">                playerStatusList.add(requireView().findViewById(R.id.privateLobbyPlayerStatus2));</span>
+<span class="fc" id="L349">                playerStatusList.add(requireView().findViewById(R.id.privateLobbyPlayerStatus3));</span>
+<span class="fc" id="L350">                playerStatusList.add(requireView().findViewById(R.id.privateLobbyPlayerStatus4));</span>
+<span class="fc" id="L351">                playerStatusList.add(requireView().findViewById(R.id.privateLobbyPlayerStatus5));</span>
+<span class="fc" id="L352">                playerStatusList.add(requireView().findViewById(R.id.privateLobbyPlayerStatus6));</span>
+
+                // disable all views that are not necessary for smaller game sizes.
+                // reset all the needed views to their default.
+<span class="fc bfc" id="L356" title="All 2 branches covered.">                for (int i = 0; i &lt; 6; i++) {</span>
+<span class="fc bfc" id="L357" title="All 2 branches covered.">                    if (i &lt;= lobby.getPlayerCount() - 1) {</span>
+<span class="fc" id="L358">                        playerList.get(i).setText(&quot;Player&quot; + (i + 1));</span>
+<span class="fc" id="L359">                        playerStatusList.get(i).setImageResource(android.R.drawable.btn_dialog);</span>
+<span class="fc" id="L360">                        continue;</span>
+                    }
+
+<span class="fc" id="L363">                    playerList.get(i).setVisibility(View.GONE);</span>
+<span class="fc" id="L364">                    playerStatusList.get(i).setVisibility(View.GONE);</span>
+                }
+
+                // Update all the shown views with correct usernames and statuses.
+<span class="fc bfc" id="L368" title="All 2 branches covered.">                for (int i = 1; i &lt;= lobby.getCurrentPlayerCount(); i++) {</span>
+
+<span class="fc" id="L370">                    UserModel player = lobby.getPlayer(i);</span>
+<span class="fc" id="L371">                    playerList.get(i - 1).setText(player.getUsername());</span>
+
+<span class="fc" id="L373">                    Log.d(&quot;user&quot;, player.getUsername());</span>
+<span class="fc" id="L374">                    Log.d(&quot;status&quot;, &quot;&quot; + lobby.getPlayerStatus(i));</span>
+
+<span class="fc" id="L376">                    Boolean status = lobby.getPlayerStatus(i);</span>
+<span class="fc bfc" id="L377" title="All 2 branches covered.">                    if (status.equals(true)) {</span>
+<span class="fc" id="L378">                        playerStatusList.get(i - 1).setImageResource(R.drawable.player_ready);</span>
+                    } else {
+<span class="fc" id="L380">                        playerStatusList.get(i - 1).setImageResource(R.drawable.player_not_ready);</span>
+
+                    }
+<span class="fc" id="L383">                    playerStatusList.get(i - 1).invalidate();</span>
+                }
+<span class="fc" id="L385">            }</span>
+        });
+<span class="fc" id="L387">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrivateLobbyModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.models</a> &gt; <span class="el_source">PrivateLobbyModel.java</span></div><h1>PrivateLobbyModel.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.models;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+
+public class PrivateLobbyModel extends LobbyModel implements Serializable {
+
+    private ArrayList&lt;Boolean&gt; userStatus;
+    private long joinCode;
+
+    public PrivateLobbyModel(ArrayList&lt;UserModel&gt; users, long lobbyId, long joinCode, int playerCount){
+<span class="nc" id="L15">        super(users, lobbyId, playerCount);</span>
+<span class="nc" id="L16">        this.joinCode = joinCode;</span>
+<span class="nc" id="L17">    }</span>
+
+    public PrivateLobbyModel(){
+<span class="fc" id="L20">        super();</span>
+<span class="fc" id="L21">        this.userStatus = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L22">    }</span>
+
+    public void addPlayer(UserModel user){
+
+<span class="fc" id="L26">        users.add(user);</span>
+<span class="fc" id="L27">        userStatus.add(false);</span>
+<span class="fc" id="L28">    }</span>
+
+    public void removePlayer(UserModel user) {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        for (int i = 0; i &lt; users.size(); i++) {</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">            if (users.get(i).getUsername().equals(user.getUsername())) {</span>
+
+<span class="nc" id="L34">                users.remove(i);</span>
+<span class="nc" id="L35">                userStatus.remove(i);</span>
+            }
+        }
+<span class="nc" id="L38">    }</span>
+
+    public Boolean getPlayerStatus(int index){
+<span class="fc" id="L41">        index--;</span>
+<span class="fc" id="L42">        return userStatus.get(index);</span>
+    }
+
+    public void changePlayerStatus(int index, Boolean status){
+<span class="fc" id="L46">        index--;</span>
+<span class="fc" id="L47">        userStatus.set(index, status);</span>
+<span class="fc" id="L48">    }</span>
+
+    public void changePlayerStatus(UserModel user, Boolean status) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (int i = 0; i &lt; users.size(); i++) {</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">            if (users.get(i).getUsername().equals(user.getUsername())) {</span>
+
+<span class="fc" id="L54">                userStatus.set(i, status);</span>
+            }
+        }
+<span class="fc" id="L57">    }</span>
+    public long getJoinCode(){
+<span class="fc" id="L59">        return this.joinCode;</span>
+    }
+    /**
+     * parses the json and updates the private lobby model.
+     *
+     * @param response - json object
+     * @return private lobby model
+     */
+    public PrivateLobbyModel parseJson(JSONObject response) {
+        try{
+<span class="fc" id="L69">            setLobbyId(response.getLong(&quot;lobbyId&quot;));</span>
+<span class="fc" id="L70">            this.joinCode = (Long) response.getLong(&quot;joinCode&quot;);</span>
+<span class="fc" id="L71">            setPlayerCount(response.getInt(&quot;playerCount&quot;));</span>
+
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            for(int i = 1; i &lt;= getPlayerCount(); i++){</span>
+<span class="fc" id="L74">                UserModel user = new UserModel();</span>
+<span class="fc" id="L75">                addPlayer(user.parseJson(response.getJSONObject(&quot;player&quot; + i)));</span>
+<span class="fc" id="L76">                userStatus.add(false);</span>
+            }
+<span class="fc" id="L78">        } catch (JSONException e) {</span>
+<span class="fc" id="L79">            e.printStackTrace();</span>
+<span class="nc" id="L80">        }</span>
+<span class="fc" id="L81">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

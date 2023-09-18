@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GameBoardFrag">
+        <attr name="boardColor" format="color"/>
+        <attr name="player1Color" format="color"/>
+        <attr name="player2Color" format="color"/>
+        <attr name="player3Color" format="color"/>
+        <attr name="player4Color" format="color"/>
+        <attr name="player5Color" format="color"/>
+        <attr name="player6Color" format="color"/>
+        <attr name="openPegColor" format="color"/>
+        <attr name="selectedPegColor" format="color"/>
+        <attr name="potentialPegColor" format="color"/>
+
+    </declare-styleable>
+</resources>

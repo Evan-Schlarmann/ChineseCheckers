@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.models</a> &gt; <span class="el_source">UserModel.java</span></div><h1>UserModel.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.models;
+
+import androidx.annotation.NonNull;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.Serializable;
+
+/**
+ * Models a user with their general data and their secret.
+ */
+public class UserModel implements Serializable {
+
+    private String username;
+    private String role;
+    private String secret;
+    private Long userID;
+    private String password;
+    private StatsModel stats;
+
+    // 1 if muted otherwise 0
+    private int isMuted;
+
+    /**
+     *
+     * @param username - username of the user
+     * @param role - role of the user
+     * @param secret - secret of the suer
+     * @param userID - users unique identification number
+     * @param password - password of the users account
+     */
+<span class="fc" id="L33">    public UserModel(String username, String role, String secret, Long userID, String password) {</span>
+<span class="fc" id="L34">        this.username = username;</span>
+<span class="fc" id="L35">        this.role = role;</span>
+<span class="fc" id="L36">        this.secret = secret;</span>
+<span class="fc" id="L37">        this.userID = userID;</span>
+<span class="fc" id="L38">        this.password = password;</span>
+
+        // created in parseJson
+<span class="fc" id="L41">        this.stats = null;</span>
+<span class="fc" id="L42">        this.isMuted = -1;</span>
+<span class="fc" id="L43">    }</span>
+
+    /**
+     * Default constructor used when parsing from json.
+     */
+<span class="fc" id="L48">    public UserModel(){</span>
+<span class="fc" id="L49">        this.username = &quot;&quot;;</span>
+<span class="fc" id="L50">    }</span>
+
+    /**
+     * @return - username of the user
+     */
+    public String getUsername() {
+<span class="fc" id="L56">        return username;</span>
+    }
+
+    /**
+     * @return - role of the user
+     */
+    public String getRole() {
+<span class="fc" id="L63">        return role;</span>
+    }
+
+    /**
+     * @return secret of the user
+     */
+    public String getSecret() {
+<span class="fc" id="L70">        return secret;</span>
+    }
+
+    /**
+     * @return - user's unique user identification number
+     */
+    public Long getUID() {
+<span class="fc" id="L77">        return userID;</span>
+    }
+
+    /**
+     * @return - password of the user
+     */
+<span class="fc" id="L83">    public String getPassword() { return password; }</span>
+
+    /**
+     * @param username - new username of the user
+     */
+    public void setUsername(String username){
+<span class="nc" id="L89">        this.username = username;</span>
+<span class="nc" id="L90">    }</span>
+
+    /**
+     * @param password - new password of the user
+     */
+    public void setPassword(String password){
+<span class="nc" id="L96">        this.password = password;</span>
+<span class="nc" id="L97">    }</span>
+
+    /**
+     * @param role - new role of the user
+     */
+    public void setRole(String role){
+<span class="nc" id="L103">        this.role = role;</span>
+<span class="nc" id="L104">    }</span>
+
+    /**
+     * @return - user stats
+     */
+    public StatsModel getStats(){
+<span class="fc" id="L110">        return this.stats;</span>
+    }
+
+    /**
+     * @return 1 if muted 0 otherwise
+     */
+    public int getIsMuted(){
+<span class="fc" id="L117">        return this.isMuted;</span>
+    }
+
+    /**
+     * @return - username of the user
+     */
+    @NonNull
+    @Override
+    public String toString() {
+<span class="fc" id="L126">        return username;</span>
+    }
+
+    /**
+     * parses the json and updates the user model.
+     *
+     * @param response - json object
+     * @return - user model
+     */
+    public UserModel parseJson(JSONObject response){
+
+        try {
+
+<span class="fc" id="L139">            this.username = response.getString(&quot;username&quot;);</span>
+<span class="fc" id="L140">            this.role = response.getString(&quot;role&quot;);</span>
+<span class="fc" id="L141">            this.secret = response.getString(&quot;secret&quot;);</span>
+<span class="fc" id="L142">            this.password = response.getString(&quot;password&quot;);</span>
+<span class="fc" id="L143">            this.userID = response.getLong(&quot;userId&quot;);</span>
+<span class="fc" id="L144">            this.isMuted = response.getInt(&quot;muted&quot;);</span>
+
+            // stats
+<span class="fc" id="L147">            int matches = response.getInt(&quot;matches&quot;);</span>
+<span class="fc" id="L148">            int wins = response.getInt(&quot;wins&quot;);</span>
+<span class="fc" id="L149">            int opponents = response.getInt(&quot;opponents&quot;);</span>
+<span class="fc" id="L150">            int elo = response.getInt(&quot;elo&quot;);</span>
+<span class="fc" id="L151">            this.stats = new StatsModel(matches, opponents, wins,  elo);</span>
+<span class="fc" id="L152">            this.isMuted = response.getInt(&quot;muted&quot;);</span>
+
+
+<span class="nc" id="L155">        } catch (JSONException e) {</span>
+<span class="nc" id="L156">            e.printStackTrace();</span>
+<span class="fc" id="L157">        }</span>
+
+<span class="fc" id="L159">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Const.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.utils</a> &gt; <span class="el_source">Const.java</span></div><h1>Const.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.utils;
+
+
+import android.app.Activity;
+
+/**
+ * Const holds all HTTP request URLS that are used.
+ */
+<span class="nc" id="L9">public class Const {</span>
+    public static final String URL_LOGIN = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/login&quot;;
+    public static final String URL_USERS_ALL = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/all&quot;;
+    public static final String URL_USERS_NEW = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/new&quot;;
+    public static final String URL_USERS_UPDATE = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/update&quot;;
+    public static final String URL_GET_USER_BYUSERNAME = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/username/&quot;;
+    public static final String URL_GET_USER_BYID = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/id/&quot;;
+    public static final String URL_LEAVE_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/leave&quot;;
+    public static final String URL_JOIN_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/join&quot;;
+    public static final String URL_KICK_USER = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/kick/&quot;;
+    public static final String URL_CREATE_FRIEND_REQUEST = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/new&quot;;
+    public static final String URL_OUTGOING_FRIEND_REQUESTS = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/user/outgoing&quot;;
+    public static final String URL_INCOMING_FRIEND_REQUESTS = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/user/incoming&quot;;
+    public static final String URL_ACCEPT_FRIEND_REQUEST = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/update&quot;;
+    public static final String URL_DENY_FRIEND_REQUEST = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/delete&quot;;
+    public static final String URL_GET_FRIENDS = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/user/friends&quot;;
+    public static final String URL_GET_FRIENDSHIPS = &quot;http://coms-309-010.class.las.iastate.edu:8080/friendships/user&quot;;
+    public static final String URL_STATS = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/stats/&quot;;
+    public static final String URL_BASE = &quot;http://coms-309-010.class.las.iastate.edu:8080/&quot;;
+
+    public static final String URL_CREATE_GAME = &quot;http://coms-309-010.class.las.iastate.edu:8080/games/createfromlobby&quot;;
+    public static final String URL_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/&quot;;
+    public static final String URL_GAME = &quot;http://coms-309-010.class.las.iastate.edu:8080/games/&quot;;
+    public static final String URL_CREATE_PRIVATE_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/newprivate&quot;;
+    public static final String URL_JOIN_PRIVATE_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/join/&quot;;
+    public static final String URL_JOIN_CASUAL_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/join-casual&quot;;
+    public static final String URL_JOIN_COMPETITIVE_LOBBY = &quot;http://coms-309-010.class.las.iastate.edu:8080/lobbys/join-competitive&quot;;
+    public static final String URL_PRIVATE_LOBBY_CHAT_WEBSOCKET = &quot;http://coms-309-010.class.las.iastate.edu:8080/chat/lobby/&quot;;
+    public static final String URL_SERVICE_TUNNEL_WEBSOCKET = &quot;http://coms-309-010.class.las.iastate.edu:8080/servicetunnel/&quot;;
+    public static final String URL_MUTE_USER = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/mute/&quot;;
+    public static final String URL_UNMUTE_USER = &quot;http://coms-309-010.class.las.iastate.edu:8080/users/unmute/&quot;;
+    public static final String URL_GLOBAL_CHAT_WEBSOCKET = &quot;http://coms-309-010.class.las.iastate.edu:8080/chat/global/&quot;;
+
+    public static String URL_PRIVATE_LOBBY_CHAT(long lobbyID, long userID){
+<span class="fc" id="L43">        return URL_PRIVATE_LOBBY_CHAT_WEBSOCKET + lobbyID + &quot;/&quot; + userID;</span>
+    }
+
+
+    /**
+     * Formats the URL of a 'get game move' request
+     * @param gameID : id number of the Game
+     * @param turnNumber : turn number of the requested move
+     * @return url of the address for the request
+     */
+    public static String URL_GAME_MOVE(long gameID, int turnNumber){
+<span class="nc" id="L54">        return URL_GAME + gameID + &quot;/getMove/&quot; + turnNumber;</span>
+    }
+
+    /**
+     * finishes the activity selected so that a user cannot navigate back to it.
+     * @param a
+     */
+    public static void killActivity(Activity a){
+<span class="nc" id="L62">        a.finish();</span>
+<span class="nc" id="L63">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

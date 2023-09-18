@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BoardModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers.models</a> &gt; <span class="el_source">BoardModel.java</span></div><h1>BoardModel.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers.models;
+
+import android.util.Log;
+
+import com.example.chinesecheckers.utils.Coordinate;
+import com.example.chinesecheckers.utils.PegMove;
+
+import java.util.ArrayList;
+
+/**
+ * Models a game board for Chinese Checkers
+ * Allows a simulation of the game by defining
+ * the boundry of the board, and making valid moves
+ */
+public class BoardModel {
+    int[][] board;
+    PegMove previousMove;
+    int turn;
+
+    /**
+     * Creates a new board and sets it to the initial state of
+     */
+<span class="nc" id="L23">    public BoardModel(){</span>
+<span class="nc" id="L24">        board = new int[17][17]; //create empty board</span>
+<span class="nc" id="L25">        turn = 0;</span>
+<span class="nc" id="L26">        resetBoard(); //set to default state</span>
+<span class="nc" id="L27">    }</span>
+
+    /**
+     * @return the current turn of the board
+     */
+<span class="nc" id="L32">    public int getTurn(){ return turn;}</span>
+
+    //used for actual display
+    /**
+     * Returns the raw array representing board
+     * @return int[][] representation of the board
+     */
+    public int[][] getRawBoard(){
+<span class="nc" id="L40">        return board;</span>
+    }
+    public PegMove getPreviousMove(){
+<span class="nc" id="L43">        return previousMove;</span>
+    }
+
+    /**
+     * sets the board to the state before a game begins
+     */
+    public void resetBoard(){
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        for(int i = 0; i &lt; 17; i++){</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            for(int j = 0; j &lt; 17; j++) {</span>
+<span class="nc" id="L52">                board[i][j] = playerStart(new Coordinate(i,j));</span>
+            }
+        }
+<span class="nc" id="L55">        turn = 0;</span>
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * Gives the default state of a given coordinate on the board
+     * @param c : coordinate to identify
+     * @return identified default coordinate value
+     */
+    private int playerStart(Coordinate c){
+        //player 1 (red squares)
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        if(     (4 &lt;= c.getX() &amp;&amp; c.getX() &lt;= 7) &amp;&amp;</span>
+<span class="nc bnc" id="L66" title="All 4 branches missed.">                (0 &lt;= c.getY() &amp;&amp; c.getY() &lt;= 3) &amp;&amp;</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                -(c.getX() - 3) + (c.getY() + 1) &gt;= 0){</span>
+<span class="nc" id="L68">            return 1;</span>
+        }
+        //player 2 (yellow squares)
+<span class="nc bnc" id="L71" title="All 4 branches missed.">        if(     (9 &lt;= c.getX() &amp;&amp; c.getX() &lt;= 12) &amp;&amp;</span>
+<span class="nc bnc" id="L72" title="All 4 branches missed.">                (4 &lt;= c.getY() &amp;&amp; c.getY() &lt;=  7) &amp;&amp;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                -(c.getX() - 8) + (c.getY() - 3) &lt;= 0){</span>
+<span class="nc" id="L74">            return 2;</span>
+        }
+        //player 3 (black squares)
+<span class="nc bnc" id="L77" title="All 4 branches missed.">        if(     (13 &lt;= c.getX() &amp;&amp; c.getX() &lt;= 16) &amp;&amp;</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">                ( 9 &lt;= c.getY() &amp;&amp; c.getY() &lt;= 12) &amp;&amp;</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                -(c.getX() - 12) + (c.getY() - 8) &gt;= 0){</span>
+<span class="nc" id="L80">            return 3;</span>
+        }
+        //player 4 (blue squares)
+<span class="nc bnc" id="L83" title="All 4 branches missed.">        if(     ( 9 &lt;= c.getX() &amp;&amp; c.getX() &lt;= 12) &amp;&amp;</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">                (13 &lt;= c.getY() &amp;&amp; c.getY() &lt;= 16) &amp;&amp;</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                -(c.getX() - 8) + (c.getY() - 12) &lt;= 0){</span>
+<span class="nc" id="L86">            return 4;</span>
+        }
+        //player 5 (green squares)
+<span class="nc bnc" id="L89" title="All 4 branches missed.">        if(     (4 &lt;= c.getX() &amp;&amp; c.getX() &lt;=  7) &amp;&amp;</span>
+<span class="nc bnc" id="L90" title="All 4 branches missed.">                (9 &lt;= c.getY() &amp;&amp; c.getY() &lt;= 12) &amp;&amp;</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                -(c.getX() - 3) + (c.getY() - 8) &gt;= 0){</span>
+<span class="nc" id="L92">            return 5;</span>
+        }
+        //player 6 (white squares)
+<span class="nc bnc" id="L95" title="All 4 branches missed.">        if(     (0 &lt;= c.getX() &amp;&amp; c.getX() &lt;= 3) &amp;&amp;</span>
+<span class="nc bnc" id="L96" title="All 4 branches missed.">                (4 &lt;= c.getY() &amp;&amp; c.getY() &lt;= 7) &amp;&amp;</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                -(c.getX() + 1) + (c.getY() - 3) &lt;= 0){</span>
+<span class="nc" id="L98">            return 6;</span>
+        }
+        //play area (orange squares)
+<span class="nc bnc" id="L101" title="All 8 branches missed.">        if(4 &lt;= c.getX() &amp;&amp; c.getX() &lt;= 12 &amp;&amp; 4 &lt;= c.getY() &amp;&amp; c.getY() &lt;= 12){</span>
+<span class="nc" id="L102">            return 0;</span>
+        }
+<span class="nc" id="L104">        return -1; //(gray squares)</span>
+    }
+
+    /**
+     * Reads the board to see if the given player has fufilled the win condition
+     * @param player : the player number to check win condition
+     * @return : if the player has won the game or not
+     */
+    public boolean playerWin(int player){
+<span class="nc" id="L113">        boolean taken = false;</span>
+<span class="nc" id="L114">        boolean filled = true;</span>
+<span class="nc bnc" id="L115" title="All 7 branches missed.">        switch(player){</span>
+            case 4 :
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                for(int x = 4; x &lt;= 7; x++) {</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                    for (int y = 0; y &lt;= 3; y++) {</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                        if(-(x - 3) + (y + 1) &gt;= 0){</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                            if(board[x][y] == player){</span>
+<span class="nc" id="L121">                                taken = true;</span>
+                            }
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                            if(board[x][y] &lt;= 0){</span>
+<span class="nc" id="L124">                                filled = false;</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc bnc" id="L129" title="All 4 branches missed.">                if(taken &amp;&amp; filled) {return true;}</span>
+                break;
+            case 5 :
+<span class="nc bnc" id="L132" title="All 2 branches missed.">                for(int x = 9; x &lt;= 12; x++) {</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                    for (int y = 4; y &lt;= 7; y++) {</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                        if(-(x - 8) + (y - 3) &lt;= 0){</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                            if(board[x][y] == player){</span>
+<span class="nc" id="L136">                                taken = true;</span>
+                            }
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                            if(board[x][y] &lt;= 0){</span>
+<span class="nc" id="L139">                                filled = false;</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc bnc" id="L144" title="All 4 branches missed.">                if(taken &amp;&amp; filled) {return true;}</span>
+                break;
+            case 6 :
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                for(int x = 13; x &lt;= 16; x++) {</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                    for (int y = 9; y &lt;= 12; y++) {</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                        if(-(x - 12) + (y - 8) &gt;= 0){</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                            if(board[x][y] == player){</span>
+<span class="nc" id="L151">                                taken = true;</span>
+                            }
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                            if(board[x][y] &lt;= 0){</span>
+<span class="nc" id="L154">                                filled = false;</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc bnc" id="L159" title="All 4 branches missed.">                if(taken &amp;&amp; filled) {return true;}</span>
+                break;
+            case 1 :
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                for(int x = 9; x &lt;= 12; x++) {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                    for (int y = 13; y &lt;= 16; y++) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                        if(-(x - 8) + (y - 12) &lt;= 0){</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                            if(board[x][y] == player){</span>
+<span class="nc" id="L166">                                taken = true;</span>
+                            }
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                            if(board[x][y] &lt;= 0){</span>
+<span class="nc" id="L169">                                filled = false;</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc bnc" id="L174" title="All 4 branches missed.">                if(taken &amp;&amp; filled) {return true;}</span>
+                break;
+            case 2 :
+<span class="nc bnc" id="L177" title="All 2 branches missed.">                for(int x = 4; x &lt;= 7; x++) {</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                    for (int y = 9; y &lt;= 12; y++) {</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                        if(-(x - 3) + (y - 8) &gt;= 0){</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                            if(board[x][y] == player){</span>
+<span class="nc" id="L181">                                taken = true;</span>
+                            }
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                            if(board[x][y] &lt;= 0){</span>
+<span class="nc" id="L184">                                filled = false;</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc bnc" id="L189" title="All 4 branches missed.">                if(taken &amp;&amp; filled) {return true;}</span>
+                break;
+            case 3 :
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                for(int x = 0; x &lt;= 3; x++) {</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    for (int y = 4; y &lt;= 7; y++) {</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">                        if(-(x + 1) + (y - 3) &lt;= 0){</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                            if(board[x][y] == player){</span>
+<span class="nc" id="L196">                                taken = true;</span>
+                            }
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                            if(board[x][y] &lt;= 0){</span>
+<span class="nc" id="L199">                                filled = false;</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc bnc" id="L204" title="All 4 branches missed.">                if(taken &amp;&amp; filled) {return true;}</span>
+                break;
+            default : break;
+        }
+<span class="nc" id="L208">        return false;</span>
+    }
+
+    /**
+     * makes the specified move on the board as long as it is valid.
+     * @param move
+     */
+    public void makeMove(PegMove move){
+<span class="nc bnc" id="L216" title="All 2 branches missed.">       if (PegMove.checkMoveValidity(board, move)) { //should be static reference, but jank</span>
+<span class="nc" id="L217">            board[move.getStart().getX()][move.getStart().getY()] = 0;</span>
+<span class="nc" id="L218">            board[move.getEnd().getX()][move.getEnd().getY()] = move.getPlayer();</span>
+<span class="nc" id="L219">            previousMove = move;</span>
+<span class="nc" id="L220">            turn++;</span>
+        } else {
+            //do something to throw error
+<span class="nc" id="L223">            System.out.println(&quot;ERROR HAS OCCURRED MOVE IS NOT VALID&quot;);</span>
+<span class="nc" id="L224">            return;</span>
+        }
+<span class="nc" id="L226">    }</span>
+
+    public void forceSwap(Coordinate a, Coordinate b){
+<span class="nc" id="L229">        int c = board[a.getX()][a.getY()];</span>
+<span class="nc" id="L230">        board[a.getX()][a.getY()] = board[b.getX()][b.getY()];</span>
+<span class="nc" id="L231">        board[b.getX()][b.getY()] = c;</span>
+<span class="nc" id="L232">    }</span>
+
+
+    /**
+     * brings a board to a predefined state
+     * @param moveHistory : list of moves
+     */
+    public void setBoard(ArrayList&lt;PegMove&gt; moveHistory){
+<span class="nc" id="L240">        resetBoard();</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        for(int count = 0; count &lt; moveHistory.size()-1; count++){</span>
+<span class="nc" id="L242">            makeMove(moveHistory.get(count));</span>
+        }
+        //moveHistory.forEach(move -&gt; makeMove(move)); had errors w/ syntax
+<span class="nc" id="L245">    }</span>
+
+    /**
+     * Outputs a String representing the current board position
+     * @return Board
+     */
+    public String toString(){ //custom spacing and rules for textview
+<span class="nc" id="L252">        String str = &quot;&quot;;</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        for (int i = 0; i &lt; 17; i++){</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">            for (int j = 0; j &lt; 17; j++){</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                if(board[j][i] == -1){</span>
+<span class="nc" id="L256">                    str += &quot;  &quot;; //two spaces</span>
+                } else{
+<span class="nc" id="L258">                    str += board[j][i]; //single digit number</span>
+                }
+<span class="nc" id="L260">                str += &quot;   &quot;; //indentation, varies based on text size/view size</span>
+            }
+<span class="nc" id="L262">            str += &quot;\n&quot;;</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">            if(i &gt; 12){str += &quot; &quot;;} //for spacing purposes</span>
+        }
+<span class="nc" id="L265">        return str;</span>
+    }
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

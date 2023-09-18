@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GamePage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">GamePage.java</span></div><h1>GamePage.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.example.chinesecheckers.app.AppController;
+import com.example.chinesecheckers.models.BoardModel;
+import com.example.chinesecheckers.models.LobbyModel;
+import com.example.chinesecheckers.models.PublicLobbyModel;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+import com.example.chinesecheckers.utils.Coordinate;
+import com.example.chinesecheckers.utils.PegMove;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.drafts.Draft_6455;
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+
+/**
+ * GamePage displays a the game the user currently occupies, and communicates with the server to
+ * make and receive moves with other players. Allows users to quit and return to the lobby.
+ */
+<span class="nc" id="L44">public class GamePage extends AppCompatActivity {</span>
+<span class="nc" id="L45">    private final String TAG = GamePage.class.getSimpleName();</span>
+    private BoardModel internalBoard;
+    private Button select;
+    private Button setDestination;
+    private Button sendMove;
+    private Button resetBoard;
+    private Button leaveGame;
+    private Coordinate selected;
+    private  Coordinate destination;
+    private TextView clickedLocation;
+    private TextView mockGameBored;
+    //other inherited stuff like user/lobby/game id
+    private LobbyModel lobby;
+    private UserModel user;
+    private Long gameId;
+    private Long[] players;
+    private int myPlayer;
+    private TextView gameNumber;
+    private Button refresh;
+
+    private WebSocketClient lobbyChatWebSocket;
+    private WebSocketClient serviceTunnelWebSocket;
+    private GameBoardFrag frag;
+
+    /**
+     * Sets up the XML for the activity and saves it's instance state
+     * @param savedInstanceState
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L75">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L76">        setContentView(R.layout.activity_game_page);</span>
+<span class="nc" id="L77">        clickedLocation = findViewById(R.id.clickedCoordinate);</span>
+//        leaveGame = findViewById(R.id.exitButton);
+//        refresh = findViewById(R.id.refreshButton);
+//        resetBoard = findViewById(R.id.ResetButton); //testing only
+<span class="nc" id="L81">        lobby = (LobbyModel) getIntent().getSerializableExtra(&quot;lobby&quot;); //upcast</span>
+<span class="nc" id="L82">        user = (UserModel) getIntent().getSerializableExtra(&quot;user&quot;);</span>
+<span class="nc" id="L83">        gameId = (Long) getIntent().getSerializableExtra(&quot;gameId&quot;);</span>
+<span class="nc" id="L84">        setPlayer();</span>
+        /*
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                refresh();
+            }
+        });
+        leaveGame.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                leave();
+            }
+        }); */
+<span class="nc" id="L98">        internalBoard = new BoardModel();</span>
+<span class="nc" id="L99">        frag =  findViewById(R.id.gameBoardFrag2);</span>
+<span class="nc" id="L100">        frag.setOnTouchListener(new View.OnTouchListener() {</span>
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+<span class="nc" id="L103">                int y = (int)(event.getY() * 17 / frag.getHeight());</span>
+<span class="nc" id="L104">                int x = -2 + (int)(( (event.getX() * 26 / frag.getWidth()) + y) / 2);</span>
+
+<span class="nc" id="L106">                Coordinate clicked = new Coordinate(x, y);</span>
+
+<span class="nc bnc" id="L108" title="All 8 branches missed.">                if( x &lt; 0 || x &gt; 16 || y &lt; 0 || y &gt; 16) {</span>
+<span class="nc" id="L109">                    clicked = new Coordinate(0, 0);</span>
+                }
+<span class="nc" id="L111">                clickedLocation.setText(clicked.getPiece(internalBoard.getRawBoard()) + &quot;( &quot; + clicked.getX() + &quot; , &quot; + clicked.getY() + &quot; ) P:&quot; + myPlayer);</span>
+<span class="nc" id="L112">                fragUser(clicked);</span>
+<span class="nc" id="L113">                return false;</span>
+            }
+        });
+<span class="nc" id="L116">        gameWebSocket();</span>
+<span class="nc" id="L117">    }</span>
+
+<span class="nc" id="L119">    private ArrayList&lt;Coordinate&gt; potentials = new ArrayList&lt;Coordinate&gt;();</span>
+    /**
+     * handler for when the user clicks a given coordinate on the board
+     * @param c
+     */
+    private void fragUser(Coordinate c) {
+        /* TESTING ONLY / // Add * to test
+        if(internalBoard.getRawBoard()[c.getX()][c.getY()] == 0 &amp;&amp; !frag.getSelected().equals(new Coordinate(0,0))) {
+            PegMove move = new PegMove(myPlayer, frag.getSelected(), c);
+            //internalBoard.forceSwap(frag.getSelected(), c); //move any piece locally
+            //internalBoard.makeMove(move); //move only your pieces locally
+            serverSendMove(move); //move only your pieces when server allows
+            frag.deselect(internalBoard);
+        }
+        /* TESTING ONLY */
+
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (internalBoard.getRawBoard()[c.getX()][c.getY()] == myPlayer){</span>
+<span class="nc" id="L137">            potentials = PegMove.getValidEndPositions(internalBoard.getRawBoard(), c);</span>
+<span class="nc" id="L138">            frag.select(c, internalBoard);</span>
+<span class="nc" id="L139">            return;</span>
+        }
+<span class="nc bnc" id="L141" title="All 6 branches missed.">        else if(internalBoard.getRawBoard()[c.getX()][c.getY()] == 0 &amp;&amp; !frag.getSelected().equals(new Coordinate(0,0)) &amp;&amp; potentials.contains(c)){</span>
+            // clickedLocation is empty AND you have a piece selected AND the move is valid
+<span class="nc" id="L143">            PegMove move = new PegMove(myPlayer, frag.getSelected(), c);</span>
+            /* testing */
+            //internalBoard.forceSwap(frag.getSelected(), c); //move any piece
+            //internalBoard.makeMove(move); //move only your pieces
+<span class="nc" id="L147">            serverSendMove(move); //move only your pieces when server allows</span>
+            /* testing */
+<span class="nc" id="L149">            frag.deselect(internalBoard);</span>
+
+<span class="nc" id="L151">        } else {</span>
+<span class="nc" id="L152">            potentials = new ArrayList&lt;Coordinate&gt;();</span>
+<span class="nc" id="L153">            frag.deselect(internalBoard);</span>
+<span class="nc" id="L154">            return;</span>
+        }
+<span class="nc" id="L156">    }</span>
+
+
+    /**
+     * sets local game player order based on the order in the server
+     */
+    private void setPlayer() {
+<span class="nc" id="L163">        JsonObjectRequest jsonObjReq = new JsonObjectRequest (Request.Method.GET, Const.URL_LOBBY + lobby.getLobbyId(), null, new Response.Listener&lt;JSONObject&gt;() {</span>
+            @Override
+            public void onResponse(JSONObject response) {
+<span class="nc" id="L166">                Log.d(TAG, response.toString());</span>
+                try {
+                    //gameId = (Long) response.getLong(&quot;gameId&quot;);
+<span class="nc" id="L169">                    JSONObject game = (JSONObject) response.get(&quot;game&quot;);</span>
+<span class="nc" id="L170">                    int playerCount = game.getInt(&quot;playerCount&quot;);</span>
+<span class="nc" id="L171">                    players = new Long[playerCount];</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                    for(int i = 1; i &lt;= playerCount; i++){</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                        if(i == 1){</span>
+<span class="nc" id="L174">                            JSONObject player = (JSONObject) response.get(&quot;player1&quot;);</span>
+<span class="nc" id="L175">                            players[i-1] = player.getLong(&quot;userId&quot;);</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                            if(user.getUID().equals(players[i-1])){myPlayer = 1;}</span>
+                        }
+<span class="nc bnc" id="L178" title="All 4 branches missed.">                        if(i == 2 &amp;&amp; response.get(&quot;player2&quot;) != null){</span>
+<span class="nc" id="L179">                            JSONObject player = (JSONObject) response.get(&quot;player2&quot;);</span>
+<span class="nc" id="L180">                            players[i-1] = player.getLong(&quot;userId&quot;);</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                            if(user.getUID().equals(players[i-1])){myPlayer = 4;}</span>
+                        }
+<span class="nc bnc" id="L183" title="All 4 branches missed.">                        if(i == 3 &amp;&amp; response.get(&quot;player3&quot;) != null){</span>
+<span class="nc" id="L184">                            JSONObject player = (JSONObject) response.get(&quot;player3&quot;);</span>
+<span class="nc" id="L185">                            players[i-1] = player.getLong(&quot;userId&quot;);</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                            if(user.getUID().equals(players[i-1])){myPlayer = 2;}</span>
+                        }
+<span class="nc bnc" id="L188" title="All 4 branches missed.">                        if(i == 4 &amp;&amp; response.get(&quot;player4&quot;) != null){</span>
+<span class="nc" id="L189">                            JSONObject player = (JSONObject) response.get(&quot;player4&quot;);</span>
+<span class="nc" id="L190">                            players[i-1] = player.getLong(&quot;userId&quot;);</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                            if(user.getUID().equals(players[i-1])){myPlayer = 5;}</span>
+                        }
+<span class="nc bnc" id="L193" title="All 4 branches missed.">                        if(i == 5 &amp;&amp; response.get(&quot;player5&quot;) != null){</span>
+<span class="nc" id="L194">                            JSONObject player = (JSONObject) response.get(&quot;player5&quot;);</span>
+<span class="nc" id="L195">                            players[i-1] = player.getLong(&quot;userId&quot;);</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">                            if(user.getUID().equals(players[i-1])){myPlayer = 3;}</span>
+                        }
+<span class="nc bnc" id="L198" title="All 4 branches missed.">                        if(i == 6 &amp;&amp; response.get(&quot;player6&quot;) != null){</span>
+<span class="nc" id="L199">                            JSONObject player = (JSONObject) response.get(&quot;player6&quot;);</span>
+<span class="nc" id="L200">                            players[i-1] = player.getLong(&quot;userId&quot;);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                            if(user.getUID().equals(players[i-1])){myPlayer = 6;}</span>
+                        }
+//                        String text = gameId.toString() + &quot;\n&quot; + myPlayer + &quot;\n&quot;;
+//                        for(int j = 0; j &lt; players.length - 1; j++){
+//                            text += players[j] + &quot; &quot;;
+//                        }
+//                        gameNumber.setText(text);
+                    }
+                }
+<span class="nc" id="L210">                catch (JSONException e) {e.printStackTrace();}</span>
+<span class="nc" id="L211">                catch (ClassCastException e) {e.printStackTrace();}</span>
+<span class="nc" id="L212">            }</span>
+<span class="nc" id="L213">        }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L216">                error.printStackTrace();</span>
+<span class="nc" id="L217">            }</span>
+        });
+<span class="nc" id="L219">        AppController.getInstance().addToRequestQueue(jsonObjReq,&quot;getLobby&quot;);</span>
+<span class="nc" id="L220">    }</span>
+
+    /**
+     * leaves the game and closes the activity page
+     */
+    private void leave(){
+<span class="nc" id="L226">        lobbyChatWebSocket.close();</span>
+<span class="nc" id="L227">        Intent i = new Intent(GamePage.this, HomePage.class);</span>
+<span class="nc" id="L228">        i.putExtra(&quot;user&quot;, user);</span>
+<span class="nc" id="L229">        this.finish();</span>
+<span class="nc" id="L230">    }</span>
+    private PegMove sentPegMove;
+
+    /**
+     * sends a move to the server and makes it locally after it has been received
+     * @param move - move to be sent to the server
+     */
+    private void serverSendMove(PegMove move){
+<span class="nc" id="L238">        sentPegMove = move;</span>
+<span class="nc" id="L239">        JSONObject params = new JSONObject();</span>
+        try {
+<span class="nc" id="L241">            JSONObject userjson = new JSONObject();</span>
+            try {
+<span class="nc" id="L243">                userjson.put(&quot;userId&quot;, user.getUID());</span>
+<span class="nc" id="L244">                userjson.put(&quot;username&quot;, user.getUsername());</span>
+<span class="nc" id="L245">            }catch (JSONException e) {</span>
+<span class="nc" id="L246">                e.printStackTrace();</span>
+<span class="nc" id="L247">            }</span>
+<span class="nc" id="L248">            JSONObject lobbyjson = new JSONObject();</span>
+            try {
+<span class="nc" id="L250">                lobbyjson.put(&quot;lobbyId&quot;, lobby.getLobbyId());</span>
+<span class="nc" id="L251">            }catch (JSONException e) {</span>
+<span class="nc" id="L252">                e.printStackTrace();</span>
+<span class="nc" id="L253">            }</span>
+<span class="nc" id="L254">            JSONObject gamejson = new JSONObject();</span>
+            try {
+<span class="nc" id="L256">                gamejson.put(&quot;gameId&quot;, gameId);</span>
+<span class="nc" id="L257">            }catch (JSONException e) {</span>
+<span class="nc" id="L258">                e.printStackTrace();</span>
+<span class="nc" id="L259">            }</span>
+<span class="nc" id="L260">            params.put(&quot;player&quot;, userjson); //String?</span>
+<span class="nc" id="L261">            params.put(&quot;lobby&quot;, lobbyjson);</span>
+<span class="nc" id="L262">            params.put(&quot;game&quot;, gamejson);</span>
+<span class="nc" id="L263">            params.put(&quot;gameId&quot;, gameId);</span>
+<span class="nc" id="L264">            params.put(&quot;turnCount&quot;, internalBoard.getTurn());</span>
+<span class="nc" id="L265">            params.put(&quot;xstartIndex&quot;, move.getStart().getX());</span>
+<span class="nc" id="L266">            params.put(&quot;ystartIndex&quot;, move.getStart().getY());</span>
+<span class="nc" id="L267">            params.put(&quot;xendIndex&quot;, move.getEnd().getX());</span>
+<span class="nc" id="L268">            params.put(&quot;yendIndex&quot;, move.getEnd().getY());</span>
+            //add other needed params if required
+<span class="nc" id="L270">        } catch (JSONException e) {</span>
+<span class="nc" id="L271">            e.printStackTrace();</span>
+<span class="nc" id="L272">        }</span>
+<span class="nc" id="L273">        Log.d(&quot;MOVE SENT&quot;,params.toString());</span>
+<span class="nc" id="L274">        StringRequest jsonObjReq =</span>
+                new StringRequest(Request.Method.POST, Const.URL_GAME + gameId +&quot;/makeMove&quot;,
+<span class="nc" id="L276">                        new Response.Listener&lt;String&gt;() {</span>
+                            @Override
+                            public void onResponse(String response) {
+<span class="nc" id="L279">                                Log.d(&quot;NEXT TURN IS TURN&quot;, response.toString());</span>
+                                try{
+<span class="nc bnc" id="L281" title="All 2 branches missed.">                                    if(Integer.valueOf(response) == internalBoard.getTurn() + 1){</span>
+<span class="nc" id="L282">                                        getMove(Integer.valueOf(response)-1);</span>
+<span class="nc" id="L283">                                        lobbyChatWebSocket.send(response);</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">                                    } else if(Integer.valueOf(response) &gt; 0){</span>
+<span class="nc" id="L285">                                        getMoves(); //refresh state bc of DeSync</span>
+                                    }
+<span class="nc" id="L287">                                } catch (Exception e){</span>
+<span class="nc" id="L288">                                    Log.d(&quot;ERROR&quot;, e.getMessage());</span>
+<span class="nc" id="L289">                                }</span>
+<span class="nc" id="L290">                            }</span>
+<span class="nc" id="L291">                        }, new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L294">                        VolleyLog.d(TAG, &quot;Error: &quot; + error.getMessage());</span>
+<span class="nc" id="L295">                    }</span>
+<span class="nc" id="L296">                }){</span>
+                    @Override
+                    public byte[] getBody() throws AuthFailureError {
+<span class="nc" id="L299">                        return params.toString().getBytes();</span>
+                    }
+
+                    @Override
+                    public String getBodyContentType() {
+<span class="nc" id="L304">                        return &quot;application/json; charset=utf-8&quot;;</span>
+                    }
+                };
+<span class="nc" id="L307">        AppController.getInstance().addToRequestQueue(jsonObjReq, &quot;sendMove&quot;);</span>
+<span class="nc" id="L308">    }</span>
+ //DEPENDENCY ON GETMOVE
+
+    /**
+     * Retrieves a move from the server and makes the move on the board
+     * @param turn - turn of the move to be retrieved
+     */
+    private void getMove(int turn){
+<span class="nc" id="L316">        Log.d(&quot;TURN REQUESTED&quot;, String.valueOf(turn));</span>
+        //Retrieving a move can be done through a get request to /games/{gameId}/getMove/{turnnumber} This will return the move on that turn
+<span class="nc" id="L318">        JsonObjectRequest jsonObjReq = new JsonObjectRequest (Request.Method.GET, Const.URL_GAME_MOVE(gameId, turn), null, new Response.Listener&lt;JSONObject&gt;() {</span>
+            @Override
+            public void onResponse(JSONObject response) {
+<span class="nc" id="L321">                Log.d(&quot;MOVE RECEIVED&quot;, response.toString());</span>
+                try {
+<span class="nc" id="L323">                    int x = response.getInt(&quot;xstartIndex&quot;);</span>
+<span class="nc" id="L324">                    int y = response.getInt(&quot;ystartIndex&quot;);</span>
+<span class="nc" id="L325">                    Coordinate start = new Coordinate(x, y);</span>
+<span class="nc" id="L326">                    x = response.getInt(&quot;xendIndex&quot;);</span>
+<span class="nc" id="L327">                    y = response.getInt(&quot;yendIndex&quot;);</span>
+<span class="nc" id="L328">                    Coordinate end = new Coordinate(x, y);</span>
+<span class="nc" id="L329">                    int turn = response.getInt(&quot;turnCount&quot;);</span>
+<span class="nc" id="L330">                    Log.d(&quot;MOVE START&quot;, start.toString());</span>
+<span class="nc" id="L331">                    Log.d(&quot;MOVE END&quot;, start.toString());</span>
+<span class="nc" id="L332">                    PegMove move = new PegMove(internalBoard.getRawBoard()[start.getX()][start.getY()], start, end);</span>
+                    /* TESTING ONLY /
+                    internalBoard.forceSwap(move.getStart(), move.getEnd());
+                    /* TESTING ONLY */
+<span class="nc" id="L336">                    internalBoard.makeMove(move);</span>
+<span class="nc" id="L337">                    frag.deselect(internalBoard);</span>
+<span class="nc" id="L338">                    Log.d(&quot;Have You Won Yet?&quot;, String.valueOf(internalBoard.playerWin(myPlayer)));</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">                    if(internalBoard.playerWin(myPlayer)){</span>
+<span class="nc" id="L340">                        sendWinNotification();</span>
+                    }
+//                    JSONObject player = (JSONObject) response.get(&quot;player&quot;);
+//                    Long id = player.getLong(&quot;userId&quot;);
+//                    for(int i = 0; i &lt; players.length; i++){
+//                        if(players[i] == id){
+//                            if(turn == internalBoard.getTurn() + 1){
+//                            PegMove getMovePegMove = new PegMove(i + 1, start, end);
+//                            internalBoard.makeMove(getMovePegMove);
+//                            frag.deselect(internalBoard);}
+//                        }
+//                    }
+                }
+<span class="nc" id="L353">                catch (JSONException e) {</span>
+<span class="nc" id="L354">                    e.printStackTrace();}</span>
+<span class="nc" id="L355">                catch (ClassCastException c) {</span>
+<span class="nc" id="L356">                    c.printStackTrace();}</span>
+<span class="nc" id="L357">            }</span>
+<span class="nc" id="L358">        }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L361">                error.printStackTrace();</span>
+<span class="nc" id="L362">            }</span>
+        });
+<span class="nc" id="L364">        AppController.getInstance().addToRequestQueue(jsonObjReq,&quot;getGame&quot;);</span>
+<span class="nc" id="L365">    }</span>
+
+    /**
+     * brings the board to the current server state
+     */
+    private void getMoves(){
+<span class="nc" id="L371">        Log.d(&quot;BOARD HAS DESYNCED&quot;, &quot;REFRESHING&quot;);</span>
+<span class="nc" id="L372">        JsonObjectRequest jsonObjReq = new JsonObjectRequest (Request.Method.GET, Const.URL_LOBBY + lobby.getLobbyId(), null, new Response.Listener&lt;JSONObject&gt;() {</span>
+            @Override
+            public void onResponse(JSONObject response) {
+<span class="nc" id="L375">                Log.d(TAG, response.toString());</span>
+                try {
+<span class="nc" id="L377">                    JSONObject object = (JSONObject) response.get(&quot;game&quot;);</span>
+<span class="nc" id="L378">                    int turnNumber = object.getInt(&quot;turnNumber&quot;);</span>
+<span class="nc" id="L379">                    internalBoard.resetBoard(); //reset state</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">                    for (int i = 0; i &lt; turnNumber; i++){</span>
+<span class="nc" id="L381">                        getMove(i);</span>
+                    }
+                }
+<span class="nc" id="L384">                catch (JSONException e) {e.printStackTrace();}</span>
+<span class="nc" id="L385">            }</span>
+<span class="nc" id="L386">        }, new Response.ErrorListener() {</span>
+            @Override
+            public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L389">                error.printStackTrace();</span>
+<span class="nc" id="L390">            }</span>
+        });
+<span class="nc" id="L392">        AppController.getInstance().addToRequestQueue(jsonObjReq,&quot;getGame&quot;);</span>
+<span class="nc" id="L393">    }</span>
+
+    /**
+     * background websocket to notify players when a turn has been made
+     */
+    private void gameWebSocket() {
+<span class="nc" id="L399">        Draft[] drafts = {new Draft_6455()};</span>
+
+        /**
+         * If running this on an android device, make sure it is on the same network as your
+         * computer, and change the ip address to that of your computer.
+         * If running on the emulator, you can use localhost.
+         */
+<span class="nc" id="L406">        String w = Const.URL_PRIVATE_LOBBY_CHAT(lobby.getLobbyId(), user.getUID());</span>
+
+        try {
+<span class="nc" id="L409">            Log.d(&quot;Socket:&quot;, &quot;Trying socket&quot;);</span>
+<span class="nc" id="L410">            lobbyChatWebSocket = new WebSocketClient(new URI(w), (Draft) drafts[0]) {</span>
+
+                @Override
+                public void onMessage(String message) {
+<span class="nc" id="L414">                    Log.d(&quot;&quot;, &quot;run() returned: &quot; + message);</span>
+<span class="nc" id="L415">                    message = message.substring(message.indexOf(&quot; &quot;) + 1);</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                    if(message.contains(&quot; has Joined the Lobby&quot;)){</span>
+<span class="nc" id="L417">                        return;</span>
+                    }
+                    //case 1, player wins -&gt; end game
+<span class="nc bnc" id="L420" title="All 2 branches missed.">                    if(message.contains(&quot;has Won the GAME!&quot;)){</span>
+<span class="nc" id="L421">                        leave();; //end game and close websocket</span>
+                    }
+                    //move should be move index
+<span class="nc bnc" id="L424" title="All 2 branches missed.">                    else if (Integer.valueOf(message) == internalBoard.getTurn() + 1){</span>
+<span class="nc" id="L425">                        getMove(internalBoard.getTurn());</span>
+                    } else {
+<span class="nc" id="L427">                        getMoves(); //refresh to get rid of desync</span>
+                    }
+<span class="nc" id="L429">                }</span>
+
+                @Override
+                public void onOpen(ServerHandshake handshake) {
+<span class="nc" id="L433">                    Log.d(&quot;OPEN&quot;, &quot;run() returned: &quot; + &quot;is connecting&quot;);</span>
+
+<span class="nc" id="L435">                }</span>
+
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+<span class="nc" id="L439">                    Log.d(&quot;CLOSE&quot;, &quot;onClose() returned: &quot; + reason);</span>
+<span class="nc" id="L440">                }</span>
+
+                @Override
+                public void onError(Exception e) {
+<span class="nc" id="L444">                    Log.d(&quot;Exception:&quot;, e.toString());</span>
+<span class="nc" id="L445">                    e.printStackTrace();</span>
+<span class="nc" id="L446">                }</span>
+            };
+<span class="nc" id="L448">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L449">            Log.d(&quot;Exception:&quot;, e.getMessage().toString());</span>
+<span class="nc" id="L450">            e.printStackTrace();</span>
+<span class="nc" id="L451">        }</span>
+<span class="nc" id="L452">        lobbyChatWebSocket.connect();</span>
+<span class="nc" id="L453">    }</span>
+
+    /**
+     * tells the server and other players that the user has won the game
+     */
+    private void sendWinNotification(){
+<span class="nc" id="L459">        JSONObject params = new JSONObject();</span>
+        try{
+<span class="nc" id="L461">            params.put(&quot;Nothing&quot;, &quot;Empty&quot;);</span>
+<span class="nc" id="L462">            params.put(&quot;lobbyId&quot;, lobby.getLobbyId());</span>
+<span class="nc" id="L463">        }catch (Exception e){}</span>
+<span class="nc" id="L464">        Log.d(&quot;WIN SENT&quot;,params.toString());</span>
+<span class="nc" id="L465">        StringRequest jsonObjReq =</span>
+<span class="nc" id="L466">                new StringRequest(Request.Method.POST, Const.URL_LOBBY + lobby.getLobbyId() + &quot;/win-game/&quot; + user.getUID(),</span>
+<span class="nc" id="L467">                        new Response.Listener&lt;String&gt;() {</span>
+                            @Override
+                            public void onResponse(String response) {
+<span class="nc" id="L470">                                Log.d(&quot;GAME WON&quot;, response.toString());</span>
+<span class="nc" id="L471">                                lobbyChatWebSocket.send(&quot;has Won the GAME!&quot;);</span>
+<span class="nc" id="L472">                            }</span>
+<span class="nc" id="L473">                        }, new Response.ErrorListener() {</span>
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+<span class="nc" id="L476">                        VolleyLog.d(TAG, &quot;Error: &quot; + error.getMessage());</span>
+<span class="nc" id="L477">                    }</span>
+<span class="nc" id="L478">                }){</span>
+                    @Override
+                    public byte[] getBody() throws AuthFailureError {
+<span class="nc" id="L481">                        return params.toString().getBytes();</span>
+                    }
+                    @Override
+                    public String getBodyContentType() {
+<span class="nc" id="L485">                        return &quot;application/json; charset=utf-8&quot;;</span>
+                    }
+                };
+<span class="nc" id="L488">        AppController.getInstance().addToRequestQueue(jsonObjReq, &quot;sendWin&quot;);</span>
+
+<span class="nc" id="L490">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

@@ -1,0 +1,62 @@
+# Example  .gitlab-ci.yml file
+stages:
+  - maventest
+  - mavenbuild
+  - androidtest
+  - androidbuild
+
+maven-test:	#this is a JOB
+  stage: maventest
+  tags:
+    - springboot
+  script:
+    - cd Backend/ServerSide
+    - mvn test
+  only:
+    changes:
+      - Backend/**/*
+
+maven-build:	#this is a JOB
+  stage: mavenbuild
+  tags:
+    - springboot
+  script:
+    - cd Backend/ServerSide
+    - mvn package
+    - sudo cp ./target/Spring-Boot-Chinese-Checkers-Project-1.0.0-SNAPSHOT.jar /serverfiles/jars/ServerSide.jar
+    - sudo systemctl stop system-web-demo.service
+    - sudo systemctl start system-web-demo.service
+  only:
+    refs:
+      - main
+    changes:
+      - Backend/**/*
+
+android-build: #this builds the android project.
+  image: gjandres/android-ci:latest
+  stage: androidbuild
+  tags:
+    - android
+  before_script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+    - chmod +x ./Frontend/ChineseCheckers/gradlew
+  script:
+    - cd Frontend/ChineseCheckers
+    - ./gradlew assemble
+  only:
+    refs:
+      - main
+    changes:
+      - Frontend/**/*
+
+android-test: #this tests the android project.
+  image: gjandres/android-ci:latest
+  stage: androidtest
+  before_script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+    - chmod +x ./Frontend/ChineseCheckers/gradlew
+  tags:
+   - android
+  script:
+    - cd Frontend/ChineseCheckers
+    - ./gradlew test

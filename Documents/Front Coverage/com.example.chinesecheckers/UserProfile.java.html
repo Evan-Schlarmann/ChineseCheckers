@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserProfile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">UserProfile.java</span></div><h1>UserProfile.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.ProgressDialog;
+import android.os.Bundle;
+import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.example.chinesecheckers.utils.Requests.FriendRequests.GetFriendships;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+
+import java.util.Objects;
+
+/**
+ * UserProfile displays a user's general public information and their stats.
+ * It also allows user's to see the status of a friend request, send a friend request,
+ * or delete a friendship.
+ */
+<span class="fc" id="L23">public class UserProfile extends AppCompatActivity {</span>
+
+<span class="fc" id="L25">    private final String TAG = UserProfile.class.getSimpleName();</span>
+    private TextView profileUsername;
+    private TextView profileRole;
+    private Button friendRequestButton;
+    private ProgressDialog pDialog;
+    private UserModel user;
+    private UserModel chosenUser;
+    private TextView matchCount;
+    private TextView winCount;
+    private TextView ELOView;
+
+    /**
+     * onCreate links the XML view to text view to display the user information.
+     * It also send a get friendships request to see if the user viewing this profile
+     * is a friend of the profiles user.
+     *
+     * @param savedInstanceState - contains all saved instances and information.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L45">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L46">        setContentView(R.layout.activity_user_profile);</span>
+
+<span class="fc" id="L48">        profileUsername = findViewById(R.id.profileUsername);</span>
+<span class="fc" id="L49">        profileRole = findViewById(R.id.profileRole);</span>
+<span class="fc" id="L50">        friendRequestButton = findViewById(R.id.friendRequestButton);</span>
+<span class="fc" id="L51">        user = (UserModel) getIntent().getSerializableExtra(&quot;user&quot;);</span>
+<span class="fc" id="L52">        chosenUser = (UserModel) getIntent().getSerializableExtra(&quot;chosenUser&quot;);</span>
+<span class="fc" id="L53">        matchCount = findViewById(R.id.userProfileMatchesPlayed);</span>
+<span class="fc" id="L54">        winCount = findViewById(R.id.userProfileGamesWon);</span>
+<span class="fc" id="L55">        ELOView = findViewById(R.id.userProfileELO);</span>
+
+        // This creates the back button.
+<span class="fc" id="L58">        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);</span>
+
+<span class="fc" id="L60">        pDialog = new ProgressDialog(this);</span>
+<span class="fc" id="L61">        pDialog.setMessage(&quot;Sending Friend Request...&quot;);</span>
+<span class="fc" id="L62">        pDialog.setCancelable(false);</span>
+
+<span class="fc" id="L64">        profileUsername.setText(chosenUser.getUsername());</span>
+<span class="fc" id="L65">        profileRole.setText(chosenUser.getRole());</span>
+<span class="fc" id="L66">        matchCount.setText(Integer.toString(chosenUser.getStats().getMatchCount()));</span>
+<span class="fc" id="L67">        winCount.setText(Integer.toString(chosenUser.getStats().getWinCount()));</span>
+<span class="fc" id="L68">        ELOView.setText(Integer.toString(chosenUser.getStats().getELO()));</span>
+
+<span class="fc" id="L70">        GetFriendships getFriendships = new GetFriendships(TAG, this, user, chosenUser, friendRequestButton);</span>
+<span class="fc" id="L71">        String URL = Const.URL_GET_FRIENDSHIPS + &quot;/&quot; + chosenUser.getUID();</span>
+<span class="fc" id="L72">        getFriendships.sendRequest(Request.Method.GET, URL);</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * onOptionsItemSelected finishes the activity when the support action bar back button is pressed.
+     *
+     * @param item - item that is selected.
+     * @return boolean
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (item.getItemId() == android.R.id.home) {</span>
+<span class="nc" id="L84">            finish();</span>
+<span class="nc" id="L85">            return true;</span>
+        }
+
+<span class="nc" id="L88">        return super.onOptionsItemSelected(item);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>

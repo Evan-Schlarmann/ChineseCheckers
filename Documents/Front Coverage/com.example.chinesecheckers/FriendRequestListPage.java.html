@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FriendRequestListPage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debug</a> &gt; <a href="index.source.html" class="el_package">com.example.chinesecheckers</a> &gt; <span class="el_source">FriendRequestListPage.java</span></div><h1>FriendRequestListPage.java</h1><pre class="source lang-java linenums">package com.example.chinesecheckers;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ListView;
+
+import com.android.volley.Request;
+import com.example.chinesecheckers.utils.Requests.FriendRequests.GetFriendRequests;
+import com.example.chinesecheckers.models.UserModel;
+import com.example.chinesecheckers.utils.Const;
+import com.example.chinesecheckers.utils.FriendRequest.FriendRequestEnum;
+
+import java.util.Objects;
+
+/**
+ * FriendRequestListPage displays either incoming or outgoing friend requests depending
+ * on which button the user has clicked. The user can then accept or delete incoming requests and
+ * they can delete outgoing requests.
+ */
+<span class="fc" id="L24">public class FriendRequestListPage extends AppCompatActivity {</span>
+
+<span class="fc" id="L26">    private final String TAG = FriendRequestListPage.class.getSimpleName();</span>
+    private ListView friendRequestList;
+    private Button incomingFriendRequests;
+    private Button outgoingFriendRequests;
+<span class="fc" id="L30">    private FriendRequestEnum selectedMenu = FriendRequestEnum.DEFAULT;</span>
+    private UserModel user;
+
+    /**
+     * onCreate loads the XML layout for the activity and saves its instance. It requires the
+     * user from the previous intent in order to have the user's information. It then links the layout
+     * to buttons allowing the user to toggle between incoming and outgoing friend requests. The
+     * requests are displayed in a list that gives them the options to accept or delete them.
+     *
+     * @param savedInstanceState - contains all saved instances and information.
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L43">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L44">        setContentView(R.layout.activity_friend_request_list);</span>
+
+<span class="fc" id="L46">        friendRequestList = findViewById(R.id.friendRequestList);</span>
+<span class="fc" id="L47">        incomingFriendRequests = findViewById(R.id.incomingFriendRequests);</span>
+<span class="fc" id="L48">        outgoingFriendRequests = findViewById(R.id.outgoingFriendRequests);</span>
+<span class="fc" id="L49">        user = (UserModel) getIntent().getSerializableExtra(&quot;user&quot;);</span>
+<span class="fc" id="L50">        FriendRequestEnum requestType = (FriendRequestEnum) getIntent().getSerializableExtra(&quot;friendRequestType&quot;);</span>
+
+        // This creates the back button.
+<span class="fc" id="L53">        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);</span>
+
+        // Load the preset friend request type wanted.
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if(requestType.equals(FriendRequestEnum.INCOMING)) {</span>
+<span class="fc" id="L57">            incomingFriendRequests.setBackgroundColor(0xFF3700B3);</span>
+<span class="fc" id="L58">            loadFriendRequests(FriendRequestEnum.INCOMING);</span>
+        }
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        else if(requestType.equals(FriendRequestEnum.OUTGOING)){</span>
+<span class="nc" id="L61">            outgoingFriendRequests.setBackgroundColor(0xFF3700B3);</span>
+<span class="nc" id="L62">            loadFriendRequests(FriendRequestEnum.OUTGOING);</span>
+        }
+
+<span class="fc" id="L65">        incomingFriendRequests.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L68">                loadFriendRequests(FriendRequestEnum.INCOMING);</span>
+<span class="nc" id="L69">            }</span>
+        });
+
+<span class="fc" id="L72">        outgoingFriendRequests.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="fc" id="L75">                loadFriendRequests(FriendRequestEnum.OUTGOING);</span>
+<span class="fc" id="L76">            }</span>
+        });
+<span class="fc" id="L78">    }</span>
+
+    /**
+     * loadFriendRequests loads all the friend requests of the given type that a user is associated
+     * with. It puts all the requests into a list displated to the user.
+     *
+     * @param requestType - friend request type INCOMING or OUTGOING.
+     */
+    private void loadFriendRequests(FriendRequestEnum requestType) {
+
+        // Does not allow sending similar requests if the button was clicked already.
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (selectedMenu.equals(requestType)) {</span>
+<span class="nc" id="L90">            return;</span>
+        }
+
+<span class="fc" id="L93">        selectedMenu = requestType;</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (selectedMenu.equals(FriendRequestEnum.INCOMING)) {</span>
+<span class="fc" id="L96">            incomingFriendRequests.setBackgroundColor(0xFF3700B3);</span>
+<span class="fc" id="L97">            outgoingFriendRequests.setBackgroundColor(0xFF985AFF);</span>
+<span class="fc" id="L98">            GetFriendRequests request =</span>
+                    new GetFriendRequests(TAG, this, user, friendRequestList, FriendRequestEnum.INCOMING);
+<span class="fc" id="L100">            String URL = Const.URL_INCOMING_FRIEND_REQUESTS + &quot;/&quot; + user.getUID().toString();</span>
+<span class="fc" id="L101">            request.sendRequest(Request.Method.GET, URL);</span>
+<span class="fc" id="L102">        } else {</span>
+<span class="fc" id="L103">            outgoingFriendRequests.setBackgroundColor(0xFF3700B3);</span>
+<span class="fc" id="L104">            incomingFriendRequests.setBackgroundColor(0xFF985AFF);</span>
+<span class="fc" id="L105">            GetFriendRequests request =</span>
+                    new GetFriendRequests(TAG, this, user, friendRequestList, FriendRequestEnum.OUTGOING);
+<span class="fc" id="L107">            String URL = Const.URL_OUTGOING_FRIEND_REQUESTS + &quot;/&quot; + user.getUID().toString();</span>
+<span class="fc" id="L108">            request.sendRequest(Request.Method.GET, URL);</span>
+        }
+<span class="fc" id="L110">    }</span>
+
+    /**
+     * onOptionsItemSelected finishes the activity when the support action bar back button is pressed.
+     *
+     * @param item - item that is selected.
+     * @return boolean
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (item.getItemId() == android.R.id.home) {</span>
+<span class="fc" id="L121">            finish();</span>
+<span class="fc" id="L122">            return true;</span>
+        }
+
+<span class="nc" id="L125">        return super.onOptionsItemSelected(item);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span>Generated by the Android Gradle plugin 7.4.0</div></body></html>
